@@ -96,7 +96,6 @@ public class UserController {
             log.warn("Ошибка. В введенном email отсутствует @");
             throw new ValidationException("В email отсутствует символ '@'");
         }
-
         Optional<String> login = Optional.ofNullable(user.getLogin());
         login.filter(loginName -> (!loginName.trim().isEmpty()) && !loginName.contains(" "))
                 .orElseThrow(() -> {

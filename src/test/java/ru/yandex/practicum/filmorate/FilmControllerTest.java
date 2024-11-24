@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.controller.FilmController;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -142,8 +143,8 @@ class FilmControllerTest {
     void updateIdNotExistsTest() {
         film1.setId(900L);
 
-        Exception exception = assertThrows(ResponseStatusException.class, () -> filmController.updateFilm(film1));
-        String expectedMessage = "404 NOT_FOUND \"Фильм с таким id не найден\"";
+        Exception exception = assertThrows(NotFoundException.class, () -> filmController.updateFilm(film1));
+        String expectedMessage = "Фильма с таким id нет в списке";
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
     }

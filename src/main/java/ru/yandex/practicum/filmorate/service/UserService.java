@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,8 +25,8 @@ public class UserService {
         }
         User user = getUserById(id);
         User userFriend = getUserById(friendId);
-        user.getFriends().add(friendId);
-        userFriend.getFriends().add(id);
+        user.addFriend(friendId);
+        userFriend.addFriend(id);
         log.info("Друг добавлен");
         return user;
     }
@@ -35,34 +34,25 @@ public class UserService {
     public User deleteFriend(Long id, Long friendId) {
         User user = getUserById(id);
         User userFriend = getUserById(friendId);
-        user.getFriends().remove(friendId);
-        userFriend.getFriends().remove(id);
+        user.deleteFriend(friendId);
+        userFriend.deleteFriend(id);
         log.info("Друг удален");
         return user;
     }
 
     public List<User> getListCommonFriends(Long first, Long second) {
+        log.info("Запрошен список общих друзей");
         User userFirst = getUserById(first);
         User userSecond = getUserById(second);
-        Set<Long> commonList = new HashSet<>(userFirst.getFriends());
-        commonList.retainAll(userSecond.getFriends());
-        log.info("Запрошен список общих друзей");
-        List<User> result = new ArrayList<>();
-        result.addAll(commonList.stream()
-                .map(this::getUserById)
-                .toList());
-        return result;
+        Set<Long> commonFriends = new HashSet<>(userFirst.getFriends());
+        commonFriends.retainAll(userSecond.getFriends());
+        return userStorage.getUserByIds(commonFriends);
     }
 
     public List<User> getListFriends(Long id) {
         User user = getUserById(id);
         log.info("Запрошен список друзей пользователя");
-        List<User> result = new ArrayList<>();
-
-        result.addAll(user.getFriends().stream()
-                .map(this::getUserById)
-                .toList());
-        return result;
+        return userStorage.getUserByIds(user.getFriends());
     }
 
     private User getUserById(Long userId) {

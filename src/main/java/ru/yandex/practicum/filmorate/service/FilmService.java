@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,7 @@ public class FilmService {
         getFilmById(userId);
         Film film = getUserById(filmId);
         log.info("Добавление лайка фильму");
-        film.getLikes().add(userId);
+        film.addLike(userId);
         return film.getLikes().size();
     }
 
@@ -33,11 +32,11 @@ public class FilmService {
         getFilmById(userId);
         Film film = getUserById(filmId);
         log.info("Удаление лайка фильму");
-        film.getLikes().remove(userId);
+        film.deleteLike(userId);
         return film.getLikes().size();
     }
 
-    public List<Film> getTheMostPopularFilms(@Positive int count) { //так можно или
+    public List<Film> getTheMostPopularFilms(int count) {
         List<Film> films = new ArrayList<>(filmStorage.getFilms());
         log.info("Запрошен список полярных фильмов (топ: {})", count);
         return films.stream()

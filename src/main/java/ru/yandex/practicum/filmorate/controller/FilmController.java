@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,7 +39,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getTheMostPopularFilms(@RequestParam(defaultValue = "10") int count) {
+    public List<Film> getTheMostPopularFilms(@RequestParam(defaultValue = "10") @Positive int count) {
         return filmService.getTheMostPopularFilms(count);
     }
 

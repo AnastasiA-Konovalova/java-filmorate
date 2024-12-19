@@ -8,8 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -135,8 +135,8 @@ class UserControllerTest {
     void updateUserIdNotExistsTest() {
         user1.setId(900L);
 
-        Exception exception = assertThrows(ResponseStatusException.class, () -> userController.updateUser(user1));
-        String expectedMessage = "404 NOT_FOUND \"Пользователь с таким id не найден\"";
+        Exception exception = assertThrows(NotFoundException.class, () -> userController.updateUser(user1));
+        String expectedMessage = "Пользователь с таким id не найден";
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
     }

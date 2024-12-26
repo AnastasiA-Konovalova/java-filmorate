@@ -9,3 +9,11 @@ public class FilmorateApplication {
 		SpringApplication.run(FilmorateApplication.class, args);
 	}
 }
+
+//добавить зависимости
+// 1 JdbsTemplate без версии
+// MVN repository найти для БД H2
+//            <scope>test</scope> - убрать
+//application.properties - create
+
+//DataBaseCustomerStorage @Primary @Repository @RequiredArgsConstructor

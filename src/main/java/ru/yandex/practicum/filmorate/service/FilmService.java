@@ -1,11 +1,14 @@
 package ru.yandex.practicum.filmorate.service;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.mapping.FilmMapperToDto;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -19,47 +22,40 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final FilmMapperToDto filmMapperToDto;
 
-    public int addLike(Long filmId, Long userId) {
-        getFilmById(userId);
-        Film film = getUserById(filmId);
+    public Integer addLike(Long filmId, Long userId) {
+        //getFilmById(userId);
+        Film film = getFilmById(filmId);
         log.info("Добавление лайка фильму");
         film.addLike(userId);
         return film.getLikes().size();
     }
 
-    public int deleteLike(Long filmId, Long userId) {
-        getFilmById(userId);
-        Film film = getUserById(filmId);
+    public Integer deleteLike(Long filmId, Long userId) {
+        //getFilmById(userId);
+        Film film = getFilmById(filmId);
         log.info("Удаление лайка фильму");
         film.deleteLike(userId);
         return film.getLikes().size();
     }
 
-    public List<Film> getTheMostPopularFilms(int count) {
+    public List<FilmDto> getTheMostPopularFilms(int count) {
         List<Film> films = new ArrayList<>(filmStorage.getFilms());
         log.info("Запрошен список полярных фильмов (топ: {})", count);
         return films.stream()
                 .sorted((film1, film2) -> Integer.compare(film2.getLikes().size(), film1.getLikes().size()))
+                .map(film -> filmMapperToDto.toDto(film))
                 .limit(count)
                 .toList();
     }
 
-    private Film getUserById(Long filmId) {
+    private Film getFilmById(Long filmId) {
         Film film = filmStorage.getFilmById(filmId);
         if (film == null) {
             log.warn("Неправильно введен id фильма");
             throw new NotFoundException("Фильм с таким id отсутствует");
         }
         return film;
-    }
-
-    private User getFilmById(Long userId) {
-        User user = userStorage.getUserById(userId);
-        if (user == null) {
-            log.warn("Неправильно введен id пользователя");
-            throw new NotFoundException("User с таким id отсутствует");
-        }
-        return user;
     }
 }

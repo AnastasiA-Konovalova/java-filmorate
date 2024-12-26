@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -39,7 +40,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getTheMostPopularFilms(@RequestParam(defaultValue = "10") @Positive int count) {
+    public List<FilmDto> getTheMostPopularFilms(@RequestParam(defaultValue = "10") @Positive int count) {
         return filmService.getTheMostPopularFilms(count);
     }
 

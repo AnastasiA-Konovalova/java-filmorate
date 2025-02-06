@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@Repository
+//@Repository
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
@@ -31,7 +31,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film addFilm(Film film) {
+    public Film createFilm(Film film) {
         films.values().stream()
                 .filter(filmCheck -> filmCheck.getName().equalsIgnoreCase(film.getName()))
                 .findFirst()

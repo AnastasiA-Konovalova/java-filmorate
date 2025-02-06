@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-@Repository
+//@Repository
 public class InMemoryUserStorage implements UserStorage {
 
     private final Map<Long, User> users = new HashMap<>();

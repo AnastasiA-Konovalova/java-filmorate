@@ -1,68 +1,79 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.BaseDbStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.Collection;
 
 @Repository
 //для обозначения класса как компонента, отвечающего за доступ к данным (DAO или Repository).
 // Это часть Spring Framework, и она помогает разработчикам создать и поддерживать слой доступа
 // к данным, работая с базами данных или другими хранилищами.
 @Qualifier("filmDbStorage")
-public class FilmDbStorage extends BaseDbStorage<Film> {
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM film WHERE id = ?";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM film";
-    private static final String INSERT_QUERY = "INSERT INTO film(name, description, release_date, duration)" +
-            "VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE film SET name = ?, description = ?, " +
+@RequiredArgsConstructor
+public class FilmDbStorage implements FilmStorage {
+    private static final String FIND_BY_ID_QUERY =
+            "SELECT f.ID, f.NAME, f.DESCRIPTION, f.RELEASE_DATE, " +
+                    "f.DURATION, f.RATING_ID, r.NAME, fg.GENRE_ID, g.NAME " +
+                    "FROM FILMS f \n" +
+                    "LEFT JOIN FILM_GENRE fg ON f.id = fg.FILM_ID \n" +
+                    "LEFT JOIN GENRE g ON g.id = fg.genre_id" +
+                    "LEFT JOIN RATING r ON f.rating_id = r.id" +
+                    "WHERE f.id = ?";
+
+//            "SELECT f.ID, f.NAME, f.DESCRIPTION, f.RELEASE_DATE, " +
+//                    "f.DURATION, f.RATING_ID, r.NAME AS RATING_NAME, " +
+//                    "g.ID AS GENRE_ID, g.NAME AS GENRE_NAME "
+
+    private static final String FIND_ALL_QUERY = "SELECT id, name, description, release_date, " +
+            "duration, rating_id FROM films";
+    private static final String INSERT_QUERY = "INSERT INTO films(id, name, description, release_date, duration)" +
+            "VALUES (?, ?, ?, ?, ?)";
+    private static final String UPDATE_QUERY = "UPDATE films SET name = ?, description = ?, " +
             "release_date = ?, duration = ? WHERE id = ?";
-    private static final String DELETE_ALL = "SELECT * FROM film";
+    private static final String DELETE_ALL = "DELETE FROM films";
 
-    public FilmDbStorage(JdbcTemplate jdbc, FilmRowMapper mapper) {
-        super(jdbc, mapper, Film.class);
+    private final JdbcTemplate jdbcTemplate;
+    private final FilmRowMapper filmRowMapper;
+
+    @Override
+    public Collection<Film> getFilms() {
+        return jdbcTemplate.query(FIND_ALL_QUERY, filmRowMapper);
     }
 
-    public Optional<Film> findById(Long filmId) {
-        return findById(FIND_BY_ID_QUERY, filmId);
+    @Override
+    public Film getFilmById(Long id) {
+        return jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, filmRowMapper, id);
     }
 
-    public List<Film> findAll() {
-        return findAll(FIND_ALL_QUERY);
-    }
-
-    public Film saveFilm(Film film) {
-        Long id = insert(
-                INSERT_QUERY,
+    @Override
+    public Film createFilm(Film film) { // тут нужен filmRowMapper?
+        jdbcTemplate.update(INSERT_QUERY,
+                film.getId(),
                 film.getName(),
                 film.getDescription(),
-                Timestamp.from(Instant.from(film.getReleaseDate())),
-                film.getDuration()
-        );
-        film.setId(id);
+                film.getReleaseDate(),
+                film.getDuration());
         return film;
     }
 
-    public Film update(Film film) {
-        update(
-                UPDATE_QUERY,
-                film.getName(),
-                film.getDescription(),
-                Timestamp.from(Instant.from(film.getReleaseDate())),
-                film.getDuration()
-        );
-        return film;
+    @Override
+    public Film updateFilm(Film newFilm) { // тут нужен filmRowMapper?
+        jdbcTemplate.update(UPDATE_QUERY,
+                newFilm.getName(),
+                newFilm.getDescription(),
+                newFilm.getReleaseDate(),
+                newFilm.getDuration(),
+                newFilm.getId());
+        return newFilm;
     }
 
-    public boolean delete(Long filmId) {
-        return delete(DELETE_ALL, filmId);
-    }
+    @Override
+    public void deleteFilms() {
+        jdbcTemplate.update(DELETE_ALL);
+    } // тут нужен filmRowMapper?
 }

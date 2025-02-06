@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
@@ -26,17 +26,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserStorage userStorage;
     private final UserService userService;
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return userStorage.getUsers();
+    public Collection<UserDto> getUsers() {
+       return userService.getListUsers();
     }
 
     @GetMapping("/films/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userStorage.getUserById(id);
+    public UserDto getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
@@ -50,13 +49,13 @@ public class UserController {
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
-        return userStorage.createUser(user);
+    public UserDto createUser(@Valid @RequestBody User user) {
+        return userService.createUser(user);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User newUser) {
-        return userStorage.updateUser(newUser);
+    public UserDto updateUser(@Valid @RequestBody User newUser) {
+        return userService.updateUser(newUser);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -66,11 +65,18 @@ public class UserController {
 
     @DeleteMapping
     public void deleteUsers() {
-        userStorage.deleteUsers();
+        userService.deleteUsers();
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public UserDto deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
         return userService.deleteFriend(id, friendId);
     }
+
+
+
 }
+
+//controller - service - storage
+//get genre all, get genre id
+//get mpa all, get mpa id

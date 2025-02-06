@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,17 +25,17 @@ import java.util.List;
 @RequestMapping("/films")
 @RequiredArgsConstructor
 public class FilmController {
-    private final FilmStorage filmStorage;
+
     private final FilmService filmService;
 
     @GetMapping
-    public Collection<Film> getFilms() {
-        return filmStorage.getFilms();
+    public Collection<FilmDto> getFilms() {
+        return filmService.getFilms();
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable Long id) {
-        return filmStorage.getFilmById(id);
+    public FilmDto getFilmById(@PathVariable Long id) {
+        return filmService.getFilmById(id);
     }
 
     @GetMapping("/popular")
@@ -45,13 +44,13 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film addFilm(@Valid @RequestBody Film film) {
-        return filmStorage.addFilm(film);
+    public FilmDto addFilm(@Valid @RequestBody FilmDto filmdto) {
+        return filmService.createFilm(filmdto);
     }
 
     @PutMapping
-    public Film updateFilm(@Valid @RequestBody Film newFilm) {
-        return filmStorage.updateFilm(newFilm);
+    public FilmDto updateFilm(@Valid @RequestBody Film newFilm) {
+        return filmService.updateFilm(newFilm);
     }
 
     @PutMapping("/{id}/like/{userId}")
@@ -66,6 +65,6 @@ public class FilmController {
 
     @DeleteMapping
     public void deleteFilms() {
-        filmStorage.deleteFilms();
+        filmService.deleteFilms();
     }
 }

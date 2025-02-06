@@ -1,3 +1,4 @@
+
 CREATE TABLE IF NOT EXISTS users (
     id LONG PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -53,13 +54,22 @@ CREATE TABLE IF NOT EXISTS likes (
 
 
 MERGE INTO users KEY(id)
-VALUES (1, 'sdfs@fd', 'rfe', 'bvx', '2000-01-01');
+VALUES (1, 'email1@mail.ru', 'userLogin1', 'userName1', '2004-10-08');
 
 MERGE INTO users KEY(id)
-VALUES (2, 'sdfs@fdq', 'rfeq', 'bvxq', '2001-01-01');
+VALUES (2, 'email2@mail.ru', 'userLogin2', 'userName2', '2001-01-01');
 
 MERGE INTO users KEY(id)
-VALUES (3, 'sdfs@fdw', 'rfee', 'bvxe', '2003-01-01');
+VALUES (3, 'email3@mail.ru', 'userLogin3', 'userName3', '2003-01-01');
 
 MERGE INTO films KEY(id)
-VALUES (1, 'filmName', 'filmDescription', '2003-01-01', 120, NULL);
+VALUES (1, 'filmName1', 'filmDescription1', '2003-01-01', 120, NULL);
+
+MERGE INTO films KEY(id)
+VALUES (2, 'filmName2', 'filmDescription2', '2013-06-01', 115, NULL);
+
+MERGE INTO genre KEY(id)
+VALUES (1, 'genreName1');
+
+MERGE INTO rating KEY(id)
+VALUES (1, 'ratingName1');

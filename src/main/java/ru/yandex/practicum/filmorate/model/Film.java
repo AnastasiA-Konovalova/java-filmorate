@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.annotation.MinimumReleaseDate;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -26,6 +27,8 @@ public class Film {
 
     @Positive(message = "Продолжительность фильма должна быть позитивным числом")
     private Integer duration;
+    private List<Genre> genres;
+    private Mpa rating;
 
     private Set<Long> likes = new HashSet<>();
 

@@ -28,7 +28,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleConditionsNotMetException(final Exception e) {
-        log.error("Выброшено исключение, другая ошибка: " + e.getMessage());
+        log.error("Выброшено исключение, другая ошибка: " + e);
         return new ErrorResponse("Другая ошибка : ", e.getMessage());
     }
 }

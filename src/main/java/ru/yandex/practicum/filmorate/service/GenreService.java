@@ -5,10 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.service.mapping.GenreMapperToDto;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,13 +18,12 @@ import java.util.List;
 public class GenreService {
 
     private final GenreDbStorage genreDbStorage;
-    private final GenreMapperToDto genreMapperToDto;
 
     public Collection<GenreDto> getGenres() {
         List<Genre> genres = (List<Genre>) genreDbStorage.getGenres();
 
         return genres.stream()
-                .map(genre -> genreMapperToDto.toDto(genre))
+                .map(GenreMapperToDto::toDto)
                 .toList();
     }
 
@@ -33,13 +31,19 @@ public class GenreService {
         Genre genre = genreDbStorage.getGenreById(id);
         if (genre == null) {
             log.warn("Неправильно введен id жанра");
-            throw new NotFoundException("User с таким id отсутствует");
+            throw new NotFoundException("Жанр с таким id отсутствует");
         }
-        return genreMapperToDto.toDto(genre);
+        return GenreMapperToDto.toDto(genre);
     }
 
-    /*public List<Long> getGenreByIds(Film film) {
-        List<Genre> genreList = genreDbStorage.getGenreById()
-        return null;
-    }*/
+    public List<GenreDto> getGenreByIds(List<Long> ids) {
+        List<Genre> genreList = genreDbStorage.getGenreByIds(ids);
+        if (genreList == null || genreList.isEmpty()) {
+            log.warn("Неправильно передан список id жанров");
+            throw new NotFoundException("Жанры с такими ids отсутствуют");
+        }
+        return genreList.stream()
+                .map(GenreMapperToDto::toDto)
+                .toList();
+    }
 }

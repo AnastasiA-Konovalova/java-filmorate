@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -87,6 +86,16 @@ public class InMemoryUserStorage implements UserStorage {
     public void deleteUsers() {
         log.info("Все пользователи удалены");
         users.clear();
+    }
+
+    @Override
+    public void addFriend(Long id, Long friendId) {
+
+    }
+
+    @Override
+    public void deleteFriend(Long id, Long friendId) {
+
     }
 
     private long generateId() {

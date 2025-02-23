@@ -7,9 +7,7 @@ import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.mapping.GenreMapperToDto;
 import ru.yandex.practicum.filmorate.service.mapping.UserMapperToDto;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
@@ -24,60 +22,65 @@ public class UserService {
 
     private final UserStorage userStorage;
     private final UserMapperToDto userMapperToDto;
-    private final GenreDbStorage genreDbStorage;
-    private final GenreMapperToDto genreMapperToDto;
 
     public UserDto addFriend(Long id, Long friendId) {
         if (id.equals(friendId)) {
             throw new ValidationException("Нельзя добавлять в друзья самого себя");
         }
+
         User user = getUser(id);
-        User userFriend = getUser(friendId);
-        user.addFriend(friendId);
-        userFriend.addFriend(id);
-        log.info("Друг добавлен");
+        User friend = getUser(friendId);
+        if (friend == null) {
+            throw new NotFoundException("Пользователь с ID " + friendId + " не найден");
+        }
+
+        user.addFriend(friend);
+        userStorage.addFriend(id, friendId);
+
         return userMapperToDto.toDto(user);
     }
 
     public UserDto deleteFriend(Long id, Long friendId) {
         User user = getUser(id);
-        User userFriend = getUser(friendId);
-        user.deleteFriend(friendId);
-        userFriend.deleteFriend(id);
-        log.info("Друг удален");
+        User friend = getUser(friendId);
+
+        user.deleteFriend(friend);
+        userStorage.deleteFriend(id, friendId);
+
         return userMapperToDto.toDto(user);
     }
 
-    public List<UserDto> getListCommonFriends(Long first, Long second) {
-        log.info("Запрошен список общих друзей");
-        User userFirst = getUser(first);
-        User userSecond = getUser(second);
-        Set<Long> commonFriends = new HashSet<>(userFirst.getFriends());
+    public List<UserDto> getListCommonFriends(Long firstId, Long secondId) {
+        User userFirst = userStorage.getUserById(firstId);
+        User userSecond = userStorage.getUserById(secondId);
+
+        Set<User> commonFriends = new HashSet<>(userFirst.getFriends());
         commonFriends.retainAll(userSecond.getFriends());
-        List<User> commonFriendUser = userStorage.getUserByIds(commonFriends);
-        return commonFriendUser.stream()
+
+        return commonFriends.stream()
                 .map(userMapperToDto::toDto)
                 .toList();
     }
 
     public List<UserDto> getListFriends(Long id) {
-        User user = getUser(id);
-        log.info("Запрошен список друзей пользователя");
-        List<User> users = userStorage.getUserByIds(user.getFriends());
-        //return userStorage.getUserByIds(user.getFriends());
-        return users.stream()
-                .map(userFriend -> userMapperToDto.toDto(userFriend))
+        User user = userStorage.getUserById(id);
+
+        log.info("user " + user);
+        log.info("Запрошен список друзей пользователя " + user.getFriends());
+
+        return user.getFriends().stream()
+                .map(userMapperToDto::toDto)
                 .toList();
     }
 
     public Collection<UserDto> getListUsers() {
-        List<User> users = (List<User>) userStorage.getUsers();
+        Collection<User> users = userStorage.getUsers();
         if (users.isEmpty()) {
             log.warn("Список users пуст");
             throw new NotFoundException("Список users пуст");
         }
         return users.stream()
-                .map(user -> userMapperToDto.toDto(user))
+                .map(userMapperToDto::toDto)
                 .toList();
     }
 
@@ -86,13 +89,22 @@ public class UserService {
             log.warn("User пуст");
             throw new NotFoundException("User пуст");
         }
-        return userMapperToDto.toDto(userStorage.createUser(user));
+//        List<UserDto> users = (List<UserDto>) getListUsers();
+//        for (UserDto userDto : users) {
+//            if (userDto.getLogin().equalsIgnoreCase(user.getLogin())) {
+//                throw new ValidationException("Пользователь с таким логином уже существует");
+//            }
+//        }
+
+        User newUser = userStorage.createUser(user);
+        return userMapperToDto.toDto(newUser);
     }
 
     public UserDto updateUser(User newUser) {
-        if (newUser == null) {
-            log.warn("User пуст");
-            throw new NotFoundException("User пуст");
+        User userById = userStorage.getUserById(newUser.getId());
+        if (userById == null) {
+            log.warn("User с таким id не существует.");
+            throw new NotFoundException("User с таким id не существует. Обновление невозможно");
         }
         return userMapperToDto.toDto(userStorage.updateUser(newUser));
     }
@@ -110,8 +122,8 @@ public class UserService {
         return userMapperToDto.toDto(user);
     }
 
-    private User getUser(Long userId) {
-        User user = userStorage.getUserById(userId);
+    private User getUser(Long id) {
+        User user = userStorage.getUserById(id);
         if (user == null) {
             log.warn("Неправильно введен id пользователя");
             throw new NotFoundException("User с таким id отсутствует");

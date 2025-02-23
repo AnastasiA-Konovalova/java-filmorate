@@ -11,11 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -30,7 +28,7 @@ public class UserController {
 
     @GetMapping
     public Collection<UserDto> getUsers() {
-       return userService.getListUsers();
+        return userService.getListUsers();
     }
 
     @GetMapping("/films/{id}")
@@ -72,11 +70,4 @@ public class UserController {
     public UserDto deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
         return userService.deleteFriend(id, friendId);
     }
-
-
-
 }
-
-//controller - service - storage
-//get genre all, get genre id
-//get mpa all, get mpa id

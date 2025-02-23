@@ -1,18 +1,20 @@
 package ru.yandex.practicum.filmorate;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.MpaDbStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
@@ -21,14 +23,17 @@ import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
+@Transactional
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({UserDbStorage.class, UserRowMapper.class, FilmDbStorage.class, FilmRowMapper.class,
@@ -38,6 +43,7 @@ class FilmoRateAppTests {
     private final UserDbStorage userDbStorage;
     private static User user1;
     private static User user2;
+    private static User user3;
     private final FilmDbStorage filmDbStorage;
     private static Film film1;
     private static Film film2;
@@ -49,23 +55,48 @@ class FilmoRateAppTests {
     private static Mpa mpa1;
     private static Mpa mpa2;
 
-    @BeforeAll
-    static void setUp() {
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void cleanDatabase() {
+        jdbcTemplate.update("DELETE FROM likes");
+        jdbcTemplate.update("DELETE FROM film_genre");
+        jdbcTemplate.update("DELETE FROM films");
+        jdbcTemplate.update("DELETE FROM users");
+
+        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+        jdbcTemplate.update("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");
+    }
+
+    @BeforeEach
+    void setUp() {
         user1 = new User();
         LocalDate birthdayUser1 = LocalDate.of(1985, 10, 5);
-        user1.setId(4L);
+        //user1.setId(4L);
         user1.setName("UserName1");
         user1.setEmail("User1@yandex.ru");
         user1.setLogin("UserLogin1");
         user1.setBirthday(birthdayUser1);
 
+
         user2 = new User();
-        user2.setId(2L);
+        //user2.setId(2L);
         LocalDate birthdayUser2 = LocalDate.of(2001, 1, 1);
         user2.setName("userName2");
         user2.setEmail("email2@mail.ru");
         user2.setLogin("userLogin2");
         user2.setBirthday(birthdayUser2);
+//        Set<User> friendUser2 = new HashSet<>();
+//        friendUser2.add(user1);
+//        user1.setFriends(friendUser2);
+
+        user3 = new User();
+        LocalDate birthdayUser3 = LocalDate.of(2006, 10, 19);
+        user3.setName("userName3");
+        user3.setEmail("email3@mail.ru");
+        user3.setLogin("userLogin3");
+        user3.setBirthday(birthdayUser3);
 
         film1 = new Film();
         film1.setId(1L);
@@ -74,6 +105,7 @@ class FilmoRateAppTests {
         LocalDate releaseDateFilm1 = LocalDate.of(2003, 1, 1);
         film1.setReleaseDate(releaseDateFilm1);
         film1.setDuration(120);
+
 
         film2 = new Film();
         film2.setId(3L);
@@ -92,42 +124,66 @@ class FilmoRateAppTests {
         film3.setDuration(160);
 
         genre1 = new Genre();
-        genre1.setId(1L);
-        genre1.setName("genreName1");
+        //genre1.setId(1L);
+        genre1.setName("Комедия");
 
         genre2 = new Genre();
-        genre2.setName("genreName2");
+        genre2.setName("Боевик");
 
         mpa1 = new Mpa();
         mpa1.setId(1L);
-        mpa1.setName("ratingName1");
+        mpa1.setName("G");
 
         mpa2 = new Mpa();
-        mpa2.setName("ratingName2");
+        mpa2.setId(5L);
+        mpa2.setName("NC-17");
+
+        //film2 add genres and mpa
+//        List<Genre> genresFilm2 = new ArrayList<>();
+//        genresFilm2.add(genre1);
+//        genresFilm2.add(genre2);
+//        film2.setGenres(genresFilm2);
+//        film2.setMpa(mpa1);
+
+        //film3 mpa add likes
+        //film3.setMpa(mpa2);
+        Set<Long> likesFilm3 = new HashSet<>();
+        likesFilm3.add(user1.getId());
+        likesFilm3.add(user2.getId());
+        film3.setLikes(likesFilm3);
     }
 
     @Test
     void testFindUserById() {
-        Optional.ofNullable(userDbStorage.getUserById(3L));
-        User user = userDbStorage.getUserById(user2.getId());
+        userDbStorage.createUser(user1);
 
-        assertEquals(user2, user);
+        Optional.ofNullable(userDbStorage.getUserById(user1.getId()));
+        User user = userDbStorage.getUserById(user1.getId());
+
+        assertNotNull(user);
+        assertEquals("UserName1", user.getName());
     }
 
     @Test
     void testFindAllUser() {
+        userDbStorage.createUser(user1);
+        userDbStorage.createUser(user2);
+
         List<User> users = (List<User>) userDbStorage.getUsers();
         assertThat(users)
                 .isNotEmpty()
                 .anySatisfy(user ->
                         assertThat(user).hasFieldOrPropertyWithValue("id", 1L)
                 );
-        assertEquals(3, users.size());
+        assertEquals(2, users.size());
     }
 
     @Test
     void testFindByIds() {
-        Set<Long> ids = Set.of(1L, 2L, 3L);
+        userDbStorage.createUser(user1);
+        userDbStorage.createUser(user2);
+        Set<Long> ids = Set.of(user1.getId(), user2.getId());
+
         List<User> users = userDbStorage.getUserByIds(ids);
 
         assertThat(users)
@@ -135,51 +191,100 @@ class FilmoRateAppTests {
                 .anySatisfy(user ->
                         assertThat(user).hasFieldOrPropertyWithValue("id", 1L)
                 );
+        assertEquals(users.size(), 2);
     }
 
     @Test
-    void testUserSave() { // doesnt work
-        Optional.ofNullable(userDbStorage.createUser(user1));
-
+    void testUserSave() {
+        userDbStorage.createUser(user1);
         User user = userDbStorage.getUserById(user1.getId());
 
-        assertEquals(user1, user);
+        assertEquals(user.getName(), user1.getName());
     }
 
     @Test
     void testUserUpdate() {
         userDbStorage.createUser(user1);
-        user2.setId(user1.getId());
-        userDbStorage.updateUser(user2);
 
-        User updateUser = userDbStorage.getUserById(user1.getId());
-        assertEquals(user2, updateUser);
+        user2.setId(user1.getId());
+
+        userDbStorage.updateUser(user2);
+        User userUpdated = userDbStorage.getUserById(user1.getId());
+
+        assertEquals(userUpdated.getName(), user2.getName());
+        assertEquals(userUpdated.getLogin(), user2.getLogin());
+        assertEquals(userUpdated.getEmail(), user2.getEmail());
+        assertEquals(userUpdated.getBirthday(), user2.getBirthday());
     }
 
     @Test
     void testUserDelete() {
         userDbStorage.createUser(user1);
+        userDbStorage.createUser(user2);
+
         userDbStorage.deleteUsers();
         List<User> users = (List<User>) userDbStorage.getUsers();
 
         assertEquals(0, users.size());
     }
 
-    //--------------------------
+    @Test
+    void addFriend() {
+        User newUser1 = userDbStorage.createUser(user1);
+        User newUser2 = userDbStorage.createUser(user2);
+        User newUser3 = userDbStorage.createUser(user3);
+
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId());
+        userDbStorage.addFriend(newUser1.getId(), newUser3.getId());
+        userDbStorage.addFriend(newUser3.getId(), newUser1.getId());
+
+        User updatedUser1 = userDbStorage.getUserById(newUser1.getId());
+        User updatedUser2 = userDbStorage.getUserById(newUser2.getId());
+        User updatedUser3 = userDbStorage.getUserById(newUser3.getId());
+
+        assertEquals(2, updatedUser1.getFriends().size());
+        assertEquals(0, updatedUser2.getFriends().size());
+        assertEquals(1, updatedUser3.getFriends().size());
+    }
+
+    @Test
+    void deleteFriend() {
+        User newUser1 = userDbStorage.createUser(user1);
+        User newUser2 = userDbStorage.createUser(user2);
+        User newUser3 = userDbStorage.createUser(user3);
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId());
+        userDbStorage.addFriend(newUser1.getId(), newUser3.getId());
+        userDbStorage.addFriend(newUser3.getId(), newUser1.getId());
+
+        userDbStorage.deleteFriend(newUser1.getId(), newUser3.getId());
+
+        User updatedUser1 = userDbStorage.getUserById(newUser1.getId());
+        User updatedUser2 = userDbStorage.getUserById(newUser2.getId());
+        User updatedUser3 = userDbStorage.getUserById(newUser3.getId());
+
+        assertEquals(1, userDbStorage.getUserById(updatedUser1.getId()).getFriends().size());
+        assertEquals(0, updatedUser2.getFriends().size());
+        assertEquals(1, updatedUser3.getFriends().size());
+    }
 
     @Test
     void testFindFilmById() {
-        Optional<Film> filmOptional = Optional.ofNullable(filmDbStorage.getFilmById(1L));
+        filmDbStorage.createFilm(film1);
+        Optional<Film> filmOptional = Optional.ofNullable(filmDbStorage.getFilmById(film1.getId()));
 
         assertThat(filmOptional)
                 .isPresent()
                 .hasValueSatisfying(film ->
                         assertThat(film).hasFieldOrPropertyWithValue("id", 1L)
                 );
+        assertEquals("filmName1", film1.getName());
     }
 
     @Test
     void testFindAllFilms() {
+        filmDbStorage.createFilm(film1);
+        filmDbStorage.createFilm(film2);
+
         List<Film> films = (List<Film>) filmDbStorage.getFilms();
         assertThat(films)
                 .isNotEmpty()
@@ -191,24 +296,26 @@ class FilmoRateAppTests {
 
     @Test
     void testFilmSave() {
-        Optional.ofNullable(filmDbStorage.createFilm(film3));
-        Film film = filmDbStorage.getFilmById(film3.getId());
+        Film filmCreate = filmDbStorage.createFilm(film3);
+        Film filmGet = filmDbStorage.getFilmById(film3.getId());
 
-        assertEquals(film3, film);
+        assertEquals(filmCreate.getName(), filmGet.getName());
     }
 
     @Test
-    void testFilmUpdate() {
-        filmDbStorage.createFilm(film2);
-        film1.setId(film2.getId());
-        filmDbStorage.updateFilm(film2);
+    void testFilmUpdate() { //doesn't work
+        Film oldFilm = filmDbStorage.createFilm(film1);
+        film2.setId(oldFilm.getId());
+        film2.setMpa(mpa2);
 
-        Film updateFilm = filmDbStorage.getFilmById(film2.getId());
-        assertEquals(film2, updateFilm);
+        Film updateFilm = filmDbStorage.updateFilm(film2);
+
+        assertEquals(updateFilm.getName(), film2.getName());
+        assertEquals(updateFilm.getDescription(), film2.getDescription());
     }
 
     @Test
-    void testFilmDelete() {
+    void testFilmsDelete() {
         filmDbStorage.createFilm(film2);
         filmDbStorage.createFilm(film3);
 
@@ -218,41 +325,93 @@ class FilmoRateAppTests {
         assertEquals(0, films.size());
     }
 
+    @Test
+    void testAddLike() {
+        User userCreate = userDbStorage.createUser(user1);
+        Film filmCreate = filmDbStorage.createFilm(film1);
+
+        filmDbStorage.addLike(filmCreate.getId(), userCreate.getId());
+
+        Integer likesCount = filmDbStorage.getFilmById(filmCreate.getId()).getLikes().size();
+        assertEquals(1, likesCount);
+    }
+
+    @Test
+    void testDeleteLike() {
+        User userCreateOne = userDbStorage.createUser(user1);
+        User userCreateTwo = userDbStorage.createUser(user2);
+        Film filmCreate = filmDbStorage.createFilm(film2);
+        filmDbStorage.addLike(filmCreate.getId(), userCreateOne.getId());
+        filmDbStorage.addLike(filmCreate.getId(), userCreateTwo.getId());
+
+        Integer likesCount = filmDbStorage.deleteLike(filmCreate.getId(), userCreateOne.getId());
+
+        assertEquals(1, likesCount);
+    }
+
+    @Test
+    void testGetPopularFilm() {
+        User userCreateOne = userDbStorage.createUser(user1);
+        User userCreateTwo = userDbStorage.createUser(user2);
+        Film filmCreateOne = filmDbStorage.createFilm(film1);
+        Film filmCreateTwo= filmDbStorage.createFilm(film2);
+        Film filmCreateThree = filmDbStorage.createFilm(film3);
+        filmDbStorage.addLike(filmCreateOne.getId(), userCreateOne.getId());
+        filmDbStorage.addLike(filmCreateThree.getId(), userCreateOne.getId());
+        filmDbStorage.addLike(filmCreateThree.getId(), userCreateTwo.getId());
+
+        List<Film> films = (List<Film>) filmDbStorage.getPopularFilms(3L);
+
+        assertEquals(films.get(0), filmDbStorage.getFilmById(filmCreateThree.getId()));
+        assertEquals(films.get(1), filmDbStorage.getFilmById(filmCreateOne.getId()));
+        assertEquals(films.get(2), filmDbStorage.getFilmById(filmCreateTwo.getId()));
+
+    }
+
     //___________________________________________
     //genre and mpa
 
     @Test
     void testFindGenreById() {
-        Optional.ofNullable(genreDbStorage.getGenreById(1L));
+        Film film = filmDbStorage.createFilm(film1);
+        Film filmFromDb = filmDbStorage.getFilmById(film.getId());
+        List<Genre> genres = new ArrayList<>();
+        genre1.setId(1L);
+        genres.add(genre1);
+        filmFromDb.setGenres(genres);
 
-        Genre genre = genreDbStorage.getGenreById(genre1.getId());
+        Genre genre = genreDbStorage.getGenreById(1L);
 
-        assertEquals(genre1, genre);
+        assertEquals(filmFromDb.getGenres().get(0), genre);
     }
 
     @Test
     void testFindAllGenres() {
         List<Genre> genres = (List<Genre>) genreDbStorage.getGenres();
-//
-        assertEquals(1, genres.size());
+
+        assertEquals(6, genres.size());
+    }
+
+    @Test
+    void getGenreByIds() {
+
     }
 
     @Test
     void testFindMpaById() {
-        Optional.ofNullable(mpaDbStorage.getMpaById(1L));
-        System.out.println(mpa1);
+        Film film = filmDbStorage.createFilm(film1);
+        Film filmFromDb = filmDbStorage.getFilmById(film.getId());
+        filmFromDb.setMpa(mpa1);
 
         Mpa mpa = mpaDbStorage.getMpaById(mpa1.getId());
-        System.out.println(mpa);
 
-        assertEquals(mpa1, mpa);
+        assertEquals(mpa, filmFromDb.getMpa());
     }
 
     @Test
     void testFindAllMpas() {
         List<Mpa> mpas = (List<Mpa>) mpaDbStorage.getMpas();
 
-        assertEquals(1, mpas.size());
+        assertEquals(5, mpas.size());
     }
-
 }

@@ -1,72 +1,83 @@
 package ru.yandex.practicum.filmorate.storage.mapper;
 
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.service.GenreService;
-import ru.yandex.practicum.filmorate.service.MpaService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
-public class FilmRowMapper implements RowMapper<Film> {
-    private MpaService mpaService;
-    private GenreService genreService;
-    private final String id = "id";
-    private final String description = "description";
-    private final String name = "name";
-    private final String duration = "duration";
-    private final String release_date = "release_date";
-    private final String rating_id = "rating_id";
-    private final String genre_id = "genre_id";
-
-
+public class FilmRowMapper implements ResultSetExtractor<List<Film>> {
+    private static final String ID = "id";
+    private static final String DESCRIPTION = "description";
+    private static final String NAME = "name";
+    private static final String DURATION = "duration";
+    private static final String RELEASE_DATE = "release_date";
+    private static final String MPA_ID = "mpa_id";
+    private static final String MPA_NAME = "mpa_name";
+    private static final String GENRE_ID = "genre_id";
+    private static final String GENRE_NAME = "genre_name";
+    private static final String LIKE_USERS = "like_users";
 
     @Override
-    public Film mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-        Film film = new Film();
-        film.setId(resultSet.getLong(id));
-        film.setName(resultSet.getString(name));
-        film.setDescription(resultSet.getString(description));
-        film.setDuration(resultSet.getInt(duration));
-        Timestamp releaseDate = resultSet.getTimestamp(release_date);
-        film.setReleaseDate(releaseDate.toLocalDateTime().toLocalDate());
+    public List<Film> extractData(ResultSet rs) throws SQLException {
+        Map<Long, Film> filmsMap = new LinkedHashMap<>();
 
-        long ratingId = resultSet.getLong(rating_id);
-        if (!resultSet.wasNull()) {
-            Mpa mpa = new Mpa();
-            mpa.setId(ratingId);
-            mpa.setName(resultSet.getString("r.name")); // Получаем название рейтинга
-            film.setRating(mpa);
-        }
+        while (rs.next()) {
+            long filmId = rs.getLong(ID);
 
-//        Mpa mpa = new Mpa();
-//        mpa.setId(resultSet.getLong(rating_id));
+            Film film = filmsMap.get(filmId);
+            if (film == null) {
+                film = new Film();
+                film.setId(filmId);
+                film.setName(rs.getString(NAME));
+                film.setDescription(rs.getString(DESCRIPTION));
+                film.setDuration(rs.getInt(DURATION));
+                film.setReleaseDate(rs.getTimestamp(RELEASE_DATE).toLocalDateTime().toLocalDate());
 
-        Set<Genre> genres = new HashSet<>();
-        while (!resultSet.isAfterLast()) { // Проверяем, не вышли ли мы за пределы набора данных
-            long genreId = resultSet.getLong(genre_id);
-            if (!resultSet.wasNull()) {
-                Genre genre = new Genre();
-                genre.setId(genreId);
-                genre.setName(resultSet.getString("g.name")); // Название жанра
-                genres.add(genre);
+                long ratingId = rs.getLong(MPA_ID);
+                if (!rs.wasNull()) {
+                    Mpa mpa = new Mpa();
+                    mpa.setId(ratingId);
+                    mpa.setName(rs.getString(MPA_NAME));
+                    film.setMpa(mpa);
+                }
+
+                film.setGenres(new ArrayList<>());
+                filmsMap.put(filmId, film);
             }
 
-            if (!resultSet.next()) break; // Переход к следующей строке или выход из цикла
-        }
-        film.setGenres(List.copyOf(genres));
+            long genreId = rs.getLong(GENRE_ID);
+            if (!rs.wasNull()) {
+                Genre genre = new Genre();
+                genre.setId(genreId);
+                genre.setName(rs.getString(GENRE_NAME));
 
-        return film;
+                if (!film.getGenres().contains(genre)) {
+                    film.getGenres().add(genre);
+                }
+            }
+
+            String userLike = rs.getString(LIKE_USERS);
+            Set<Long> likes = new HashSet<>();
+
+            if (userLike != null) {
+                for (String userId : userLike.split(",")) {
+                    likes.add(Long.valueOf(userId));
+                }
+            }
+            film.setLikes(likes);
+        }
+
+        return new ArrayList<>(filmsMap.values());
     }
 }

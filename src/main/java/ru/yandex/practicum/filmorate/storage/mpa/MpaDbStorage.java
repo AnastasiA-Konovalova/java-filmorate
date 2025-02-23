@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.storage.mpa;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,14 +12,12 @@ import java.util.Collection;
 @Repository
 @Qualifier("mpaDbStorage")
 @RequiredArgsConstructor
-public class MpaDbStorage {
+public class MpaDbStorage implements MpaStorage {
     private static final String FIND_ALL_MPA = "SELECT * FROM rating";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM rating WHERE id = ?";
-
     private final JdbcTemplate jdbcTemplate;
     private final MpaRowMapper mpaRowMapper;
 
-    //сделать интерфейс?
     public Collection<Mpa> getMpas() {
         return jdbcTemplate.query(FIND_ALL_MPA, mpaRowMapper);
     }

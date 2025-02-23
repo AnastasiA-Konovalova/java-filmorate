@@ -4,18 +4,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.service.mapping.FilmMapperToDto;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.MpaDbStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -23,34 +29,31 @@ import java.util.List;
 public class FilmService {
 
     private final FilmStorage filmStorage;
-    private final FilmMapperToDto filmMapperToDto;
     private final MpaDbStorage mpaDbStorage;
     private final GenreDbStorage genreDbStorage;
 
     public Integer addLike(Long filmId, Long userId) {
-        //getFilmById(userId);
-        Film film = getFilm(filmId);
+        if (filmId == null || userId == null) {
+            throw new NotFoundException("Неверно указан id фильма " + filmId + " или пользователя" + userId);
+        }
+        Optional.ofNullable(getFilm(filmId))
+                .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
+
         log.info("Добавление лайка фильму");
-        film.addLike(userId);
-        return film.getLikes().size();
+
+        return filmStorage.addLike(filmId, userId);
     }
 
     public Integer deleteLike(Long filmId, Long userId) {
-        //getFilmById(userId);
-        Film film = getFilm(filmId);
+        if (filmId == null || userId == null) {
+            throw new NotFoundException("Неверно указан id фильма " + filmId + " или пользователя" + userId);
+        }
         log.info("Удаление лайка фильму");
-        film.deleteLike(userId);
-        return film.getLikes().size();
+        return filmStorage.deleteLike(filmId, userId);
     }
 
-    public List<FilmDto> getTheMostPopularFilms(int count) {
-        List<Film> films = new ArrayList<>(filmStorage.getFilms());
-        log.info("Запрошен список популярных фильмов (топ: {})", count);
-        return films.stream()
-                .sorted((film1, film2) -> Integer.compare(film2.getLikes().size(), film1.getLikes().size()))
-                .map(film -> filmMapperToDto.toDto(film))
-                .limit(count)
-                .toList();
+    public List<FilmDto> getPopularFilms(long count) {
+        return filmStorage.getPopularFilms(count).stream().map(FilmMapperToDto::toDto).toList();
     }
 
     public FilmDto createFilm(FilmDto filmDto) {
@@ -59,30 +62,49 @@ public class FilmService {
             throw new NotFoundException("Фильм пуст");
         }
 
-        List<Long> genreIds = filmDto.getGenres();
-        MpaDto ratingId = filmDto.getRatingId();
-
         Film film = new Film();
         film.setName(filmDto.getName());
         film.setDescription(filmDto.getDescription());
         film.setReleaseDate(filmDto.getReleaseDate());
         film.setDuration(filmDto.getDuration());
         film.setLikes(new HashSet<>());
-        film.setGenres(List.copyOf(genreDbStorage.getGenres()));
-        film.setRating(mpaDbStorage.getMpaById(ratingId.getId()));
 
+        List<GenreDto> genreDtos = filmDto.getGenres();
 
-        return filmMapperToDto.toDto(filmStorage.createFilm(film));
+        Map<Long, Genre> idToGenre = new HashMap<>();
+        genreDbStorage.getGenres().forEach(g -> idToGenre.put(g.getId(), g));
+
+        film.setGenres(
+                Optional.ofNullable(genreDtos)
+                        .orElse(Collections.emptyList())
+                        .stream()
+                        .peek(g -> {
+                            if (!idToGenre.containsKey(g.getId())) {
+                                throw new NotFoundException("Жанр не найден: id = " + g.getId());
+                            }
+                        })
+                        .map(g -> idToGenre.get(g.getId()))
+                        .filter(Objects::nonNull)
+                        .toList()
+        );
+        MpaDto mpa = filmDto.getMpa();
+        if (mpa != null) {
+            film.setMpa(mpaDbStorage.getMpaById(mpa.getId()));
+        }
+
+        return FilmMapperToDto.toDto(filmStorage.createFilm(film));
     }
 
     public Collection<FilmDto> getFilms() {
-        List<Film> films = (List<Film>) filmStorage.getFilms();
+        Collection<Film> films = filmStorage.getFilms();
+
         if (films.isEmpty()) {
             log.warn("Список фильмов пуст");
             throw new NotFoundException("Список фильмов пуст");
         }
+
         return films.stream()
-                .map(film -> filmMapperToDto.toDto(film))
+                .map(FilmMapperToDto::toDto)
                 .toList();
     }
 
@@ -92,15 +114,23 @@ public class FilmService {
             log.warn("Неправильно введен id фильма");
             throw new NotFoundException("Фильм с таким id отсутствует");
         }
-        return filmMapperToDto.toDto(film);
+        return FilmMapperToDto.toDto(film);
     }
 
-    public FilmDto updateFilm(Film newFilm) {
-        if (newFilm == null) {
-            log.warn("Обновляющий фильм пуст");
-            throw new NotFoundException("Обновляющий фильм пуст");
+    public FilmDto updateFilm(FilmDto filmDto) {
+        Film film = filmStorage.getFilmById(filmDto.getId());
+        if (film == null) {
+            throw new NotFoundException("Фильм с id = " + filmDto.getId() + " не найден");
         }
-        return filmMapperToDto.toDto(filmStorage.updateFilm(newFilm));
+
+        film.setId(filmDto.getId());
+        film.setName(filmDto.getName());
+        film.setDescription(filmDto.getDescription());
+        film.setDuration(filmDto.getDuration());
+        film.setReleaseDate(filmDto.getReleaseDate());
+        film.setMpa(mpaDbStorage.getMpaById(filmDto.getMpa().getId()));
+
+        return FilmMapperToDto.toDto(filmStorage.updateFilm(film));
     }
 
     public void deleteFilms() {

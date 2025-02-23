@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -19,6 +21,7 @@ public class Film {
     @NotBlank(message = "Название не может быть пустым")
     private String name;
 
+    @JsonProperty("description")
     @Size(max = 200, message = "Длина описания не может быть больше 200 символов")
     private String description;
 
@@ -28,7 +31,7 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть позитивным числом")
     private Integer duration;
     private List<Genre> genres;
-    private Mpa rating;
+    private Mpa mpa;
 
     private Set<Long> likes = new HashSet<>();
 

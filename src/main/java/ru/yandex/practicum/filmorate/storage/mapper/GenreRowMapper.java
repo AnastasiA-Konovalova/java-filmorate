@@ -9,14 +9,14 @@ import java.sql.SQLException;
 
 @Component
 public class GenreRowMapper implements RowMapper<Genre> {
-    String id = "id";
-    String name = "name";
+    private static final String ID = "id";
+    private static final String NAME = "name";
 
     @Override
     public Genre mapRow(ResultSet resultSet, int rowNum) throws SQLException {
         Genre genre = new Genre();
-        genre.setId(resultSet.getLong(id));
-        genre.setName(resultSet.getString(name));
+        genre.setId(resultSet.getLong(ID));
+        genre.setName(resultSet.getString(NAME));
 
         return genre;
     }

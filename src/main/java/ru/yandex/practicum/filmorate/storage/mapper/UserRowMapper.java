@@ -1,33 +1,52 @@
 package ru.yandex.practicum.filmorate.storage.mapper;
 
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.mapping.UserMapperToDto;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.*;
 
 @Component
-public class UserRowMapper implements RowMapper<User> {
-    private final String id = "id";
-    private final String login = "login";
-    private final String name = "name";
-    private final String email = "email";
-    private final String birthday = "birthday";
+public class UserRowMapper implements ResultSetExtractor<List<User>> {
+    private static final String ID = "id";
+    private static final String LOGIN = "login";
+    private static final String NAME = "name";
+    private static final String EMAIL = "email";
+    private static final String BIRTHDAY = "birthday";
+    private static final String FRIEND_ID_COLUMN_NAME = "friend_id";
 
     @Override
-    public User mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-        User user = new User();
-        user.setId(resultSet.getLong(id));
-        user.setLogin(resultSet.getString(login));
-        user.setName(resultSet.getString(name));
-        user.setEmail(resultSet.getString(email));
-        Timestamp birthdayDate = resultSet.getTimestamp(birthday);
-        user.setBirthday(birthdayDate.toLocalDateTime().toLocalDate());
+    public List<User> extractData(ResultSet rs) throws SQLException {
+        Map<Long, User> usersMap = new LinkedHashMap<>();
 
-        return user;
+        while (rs.next()) {
+            long userId = rs.getLong(ID);
+            User user = usersMap.get(userId);
+
+            if (user == null) {
+                user = new User();
+                user.setId(userId);
+                user.setLogin(rs.getString(LOGIN));
+                user.setName(rs.getString(NAME));
+                user.setEmail(rs.getString(EMAIL));
+                Timestamp birthdayDate = rs.getTimestamp(BIRTHDAY);
+                user.setBirthday(birthdayDate.toLocalDateTime().toLocalDate());
+                user.setFriends(new HashSet<>());
+
+                usersMap.put(userId, user);
+            }
+
+            long friendId = rs.getLong(FRIEND_ID_COLUMN_NAME);
+            if (!rs.wasNull()) {
+                User friend = new User();
+                friend.setId(friendId);
+                user.getFriends().add(friend);
+            }
+        }
+
+        return new ArrayList<>(usersMap.values());
     }
 }

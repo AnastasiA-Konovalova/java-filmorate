@@ -28,13 +28,13 @@ public class User {
     @Past(message = "День рождения не может быть в будущем")
     private LocalDate birthday;
 
-    private Set<Long> friends = new HashSet<>();
+    private Set<User> friends = new HashSet<>();
 
-    public void addFriend(Long friendId) {
-        friends.add(friendId);
+    public void addFriend(User friend) {
+        friends.add(friend);
     }
 
-    public void deleteFriend(Long friendId) {
-        friends.remove(friendId);
+    public void deleteFriend(User friend) {
+        friends.remove(friend);
     }
 }

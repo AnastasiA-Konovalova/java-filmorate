@@ -112,8 +112,6 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getPopularFilms(Long count) {
-        System.out.println("LIKES" + jdbcTemplate.query(FIND_POPULAR_QUERY, new FilmRowMapper(), count));
-        // todo убрать!!!!!
         return jdbcTemplate.query(FIND_POPULAR_QUERY, new FilmRowMapper(), count);
     }
 

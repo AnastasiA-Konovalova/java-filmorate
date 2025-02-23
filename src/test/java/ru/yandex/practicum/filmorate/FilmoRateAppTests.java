@@ -13,13 +13,13 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
@@ -30,7 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @JdbcTest
 @Transactional
@@ -73,23 +74,17 @@ class FilmoRateAppTests {
     void setUp() {
         user1 = new User();
         LocalDate birthdayUser1 = LocalDate.of(1985, 10, 5);
-        //user1.setId(4L);
         user1.setName("UserName1");
         user1.setEmail("User1@yandex.ru");
         user1.setLogin("UserLogin1");
         user1.setBirthday(birthdayUser1);
 
-
         user2 = new User();
-        //user2.setId(2L);
         LocalDate birthdayUser2 = LocalDate.of(2001, 1, 1);
         user2.setName("userName2");
         user2.setEmail("email2@mail.ru");
         user2.setLogin("userLogin2");
         user2.setBirthday(birthdayUser2);
-//        Set<User> friendUser2 = new HashSet<>();
-//        friendUser2.add(user1);
-//        user1.setFriends(friendUser2);
 
         user3 = new User();
         LocalDate birthdayUser3 = LocalDate.of(2006, 10, 19);
@@ -105,7 +100,6 @@ class FilmoRateAppTests {
         LocalDate releaseDateFilm1 = LocalDate.of(2003, 1, 1);
         film1.setReleaseDate(releaseDateFilm1);
         film1.setDuration(120);
-
 
         film2 = new Film();
         film2.setId(3L);
@@ -124,7 +118,6 @@ class FilmoRateAppTests {
         film3.setDuration(160);
 
         genre1 = new Genre();
-        //genre1.setId(1L);
         genre1.setName("Комедия");
 
         genre2 = new Genre();
@@ -138,15 +131,6 @@ class FilmoRateAppTests {
         mpa2.setId(5L);
         mpa2.setName("NC-17");
 
-        //film2 add genres and mpa
-//        List<Genre> genresFilm2 = new ArrayList<>();
-//        genresFilm2.add(genre1);
-//        genresFilm2.add(genre2);
-//        film2.setGenres(genresFilm2);
-//        film2.setMpa(mpa1);
-
-        //film3 mpa add likes
-        //film3.setMpa(mpa2);
         Set<Long> likesFilm3 = new HashSet<>();
         likesFilm3.add(user1.getId());
         likesFilm3.add(user2.getId());
@@ -354,7 +338,7 @@ class FilmoRateAppTests {
         User userCreateOne = userDbStorage.createUser(user1);
         User userCreateTwo = userDbStorage.createUser(user2);
         Film filmCreateOne = filmDbStorage.createFilm(film1);
-        Film filmCreateTwo= filmDbStorage.createFilm(film2);
+        Film filmCreateTwo = filmDbStorage.createFilm(film2);
         Film filmCreateThree = filmDbStorage.createFilm(film3);
         filmDbStorage.addLike(filmCreateOne.getId(), userCreateOne.getId());
         filmDbStorage.addLike(filmCreateThree.getId(), userCreateOne.getId());
@@ -367,9 +351,6 @@ class FilmoRateAppTests {
         assertEquals(films.get(2), filmDbStorage.getFilmById(filmCreateTwo.getId()));
 
     }
-
-    //___________________________________________
-    //genre and mpa
 
     @Test
     void testFindGenreById() {
@@ -394,7 +375,15 @@ class FilmoRateAppTests {
 
     @Test
     void getGenreByIds() {
+        List<Long> genres = new ArrayList<>();
+        Genre genre1 = genreDbStorage.getGenreById(1L);
+        Genre genre2 = genreDbStorage.getGenreById(2L);
+        genres.add(genre1.getId());
+        genres.add(genre2.getId());
 
+        List<Genre> genreIds = genreDbStorage.getGenreByIds(genres);
+
+        assertEquals(2, genreIds.size());
     }
 
     @Test

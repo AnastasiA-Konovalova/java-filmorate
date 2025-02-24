@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
@@ -24,14 +25,14 @@ import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @JdbcTest
 @Transactional
@@ -216,19 +217,37 @@ class FilmoRateAppTests {
     void addFriend() {
         User newUser1 = userDbStorage.createUser(user1);
         User newUser2 = userDbStorage.createUser(user2);
+
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
+
+        assertTrue(userDbStorage.isFriendshipExists(newUser1.getId(), newUser2.getId()));
+    }
+
+    @Test
+    void updateFriendStatusTest() {
+        User newUser1 = userDbStorage.createUser(user1);
+        User newUser2 = userDbStorage.createUser(user2);
+
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.updateFriendStatus(newUser1.getId(), newUser2.getId(), FriendStatus.CONFIRMED);
+
+        List<User> friends = List.copyOf(userDbStorage.getUserById(newUser1.getId()).getFriends());
+        friends.get(0)
+    }
+
+    @Test
+    void isFriendshipExistsTest() {
+        User newUser1 = userDbStorage.createUser(user1);
+        User newUser2 = userDbStorage.createUser(user2);
         User newUser3 = userDbStorage.createUser(user3);
 
-        userDbStorage.addFriend(newUser1.getId(), newUser2.getId());
-        userDbStorage.addFriend(newUser1.getId(), newUser3.getId());
-        userDbStorage.addFriend(newUser3.getId(), newUser1.getId());
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(newUser1.getId(), newUser3.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(newUser3.getId(), newUser1.getId(), FriendStatus.CONFIRMED);
 
         User updatedUser1 = userDbStorage.getUserById(newUser1.getId());
         User updatedUser2 = userDbStorage.getUserById(newUser2.getId());
         User updatedUser3 = userDbStorage.getUserById(newUser3.getId());
-
-        assertEquals(2, updatedUser1.getFriends().size());
-        assertEquals(0, updatedUser2.getFriends().size());
-        assertEquals(1, updatedUser3.getFriends().size());
     }
 
     @Test
@@ -236,9 +255,9 @@ class FilmoRateAppTests {
         User newUser1 = userDbStorage.createUser(user1);
         User newUser2 = userDbStorage.createUser(user2);
         User newUser3 = userDbStorage.createUser(user3);
-        userDbStorage.addFriend(newUser1.getId(), newUser2.getId());
-        userDbStorage.addFriend(newUser1.getId(), newUser3.getId());
-        userDbStorage.addFriend(newUser3.getId(), newUser1.getId());
+        userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(newUser1.getId(), newUser3.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(newUser3.getId(), newUser1.getId(), FriendStatus.CONFIRMED);
 
         userDbStorage.deleteFriend(newUser1.getId(), newUser3.getId());
 

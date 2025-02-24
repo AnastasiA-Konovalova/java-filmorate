@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.extern.slf4j.Slf4j;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.ArrayList;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-//@Repository
 public class InMemoryUserStorage implements UserStorage {
 
     private final Map<Long, User> users = new HashMap<>();
@@ -89,13 +89,23 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(Long id, Long friendId) {
+    public void addFriend(Long id, Long friendId, FriendStatus friendStatus) {
 
     }
 
     @Override
     public void deleteFriend(Long id, Long friendId) {
 
+    }
+
+    @Override
+    public void updateFriendStatus(Long id, Long friendId, FriendStatus newStatus) {
+
+    }
+
+    @Override
+    public boolean isFriendshipExists(Long id, Long friendId) {
+        return false;
     }
 
     private long generateId() {

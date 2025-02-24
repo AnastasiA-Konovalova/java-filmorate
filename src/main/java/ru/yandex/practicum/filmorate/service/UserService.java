@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Friend;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.mapping.UserMapperToDto;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -13,6 +15,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
@@ -29,20 +32,30 @@ public class UserService {
         }
 
         User user = getUser(id);
-        User friend = getUser(friendId);
+        Friend friend = getFriend(friendId, id);
         if (friend == null) {
             throw new NotFoundException("Пользователь с ID " + friendId + " не найден");
         }
 
-        user.addFriend(friend);
-        userStorage.addFriend(id, friendId);
+        boolean friendshipExists = userStorage.isFriendshipExists(friendId, id);
 
+        if (friendshipExists) {
+            userStorage.updateFriendStatus(friendId, id, FriendStatus.CONFIRMED);
+            userStorage.addFriend(id, friendId, FriendStatus.CONFIRMED);
+        } else {
+            userStorage.addFriend(id, friendId, FriendStatus.UNCONFIRMED);
+        }
+
+        user.addFriend(friend);
         return userMapperToDto.toDto(user);
     }
 
+
     public UserDto deleteFriend(Long id, Long friendId) {
         User user = getUser(id);
-        User friend = getUser(friendId);
+        //User friend = getUser(friendId);
+
+        Friend friend = getFriend(friendId, id);
 
         user.deleteFriend(friend);
         userStorage.deleteFriend(id, friendId);
@@ -60,6 +73,15 @@ public class UserService {
         return commonFriends.stream()
                 .map(userMapperToDto::toDto)
                 .toList();
+    }
+
+    public Friend getFriend(Long friendId, Long id) {
+        if (Objects.equals(friendId, id)) {
+            throw new ValidationException("Id друга " + friendId + " не должно совпадать с id " +
+                    "пользователя " + id);
+        }
+
+        return userStorage.getFriend(friendId, id);
     }
 
     public List<UserDto> getListFriends(Long id) {
@@ -89,12 +111,6 @@ public class UserService {
             log.warn("User пуст");
             throw new NotFoundException("User пуст");
         }
-//        List<UserDto> users = (List<UserDto>) getListUsers();
-//        for (UserDto userDto : users) {
-//            if (userDto.getLogin().equalsIgnoreCase(user.getLogin())) {
-//                throw new ValidationException("Пользователь с таким логином уже существует");
-//            }
-//        }
 
         User newUser = userStorage.createUser(user);
         return userMapperToDto.toDto(newUser);

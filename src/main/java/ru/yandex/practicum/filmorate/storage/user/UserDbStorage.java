@@ -7,6 +7,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Friend;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
 
@@ -35,11 +37,15 @@ public class UserDbStorage implements UserStorage {
     private static final String FIND_ALL_QUERY = "SELECT * FROM users";
     private static final String INSERT_QUERY = "INSERT INTO users(email, login, name, birthday)" +
             "VALUES (?, ?, ?, ?)";
-    private static final String INSERT_FRIENDS = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)";
+    private static final String INSERT_FRIENDS = "INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, ?)";
     private static final String DELETE_FRIENDS = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
     private static final String UPDATE_QUERY = "UPDATE users SET email = ?, login = ?, " +
             "name = ?, birthday = ? WHERE id = ?";
     private static final String DELETE_ALL = "DELETE FROM users";
+    private static final String UPDATE_FRIEND_STATUS_QUERY = "UPDATE friend SET status = ? " +
+            "WHERE user_id = ? AND friend_id = ?";
+    private static final String CHECK_FRIENDSHIP_EXISTS_QUERY =
+            "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ?";
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
@@ -133,16 +139,31 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(Long id, Long friendId) {
-        jdbcTemplate.update(INSERT_FRIENDS, id, friendId);
+    public void addFriend(Long id, Long friendId, FriendStatus friendStatus) {
+        jdbcTemplate.update(INSERT_FRIENDS, id, friendId, friendStatus.name());
         User user = getUserById(id);
         if (user != null) {
             user.getFriends().add(getUserById(friendId));
         }
     }
 
+    public Friend getFriend(Long friendId, Long id) {
+
+    }
+
     @Override
     public void deleteFriend(Long id, Long friendId) {
         jdbcTemplate.update(DELETE_FRIENDS, id, friendId);
+    }
+
+    @Override
+    public void updateFriendStatus(Long id, Long friendId, FriendStatus newStatus) {
+        jdbcTemplate.update(UPDATE_FRIEND_STATUS_QUERY, newStatus.name(), id, friendId);
+    }
+
+    @Override
+    public boolean isFriendshipExists(Long id, Long friendId) {
+        Integer count = jdbcTemplate.queryForObject(CHECK_FRIENDSHIP_EXISTS_QUERY, Integer.class, id, friendId);
+        return count != null && count > 0;
     }
 }

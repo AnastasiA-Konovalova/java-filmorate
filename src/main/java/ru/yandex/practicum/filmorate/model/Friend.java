@@ -3,10 +3,9 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.Data;
 
 @Data
-public class Friends {
-
+public class Friend {
     private Long id;
     private Long userId;
     private Long friendId;
-    private String status;
+    private FriendStatus status;
 }

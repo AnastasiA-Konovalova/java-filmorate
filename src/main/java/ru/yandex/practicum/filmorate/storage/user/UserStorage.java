@@ -22,7 +22,7 @@ public interface UserStorage {
 
     void deleteUsers();
 
-    void addFriend(Long id, Long friendId, FriendStatus friendStatus);
+    Friend addFriend(Long id, Long friendId, FriendStatus friendStatus);
 
     Friend getFriend(Long friendId, Long id);
 

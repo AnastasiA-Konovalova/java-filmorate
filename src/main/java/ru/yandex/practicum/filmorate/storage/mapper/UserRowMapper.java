@@ -2,12 +2,17 @@ package ru.yandex.practicum.filmorate.storage.mapper;
 
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class UserRowMapper implements ResultSetExtractor<List<User>> {
@@ -41,7 +46,7 @@ public class UserRowMapper implements ResultSetExtractor<List<User>> {
 
             long friendId = rs.getLong(FRIEND_ID_COLUMN_NAME);
             if (!rs.wasNull()) {
-                User friend = new User();
+                Friend friend = new Friend();
                 friend.setId(friendId);
                 user.getFriends().add(friend);
             }

@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.Friend.FriendDbStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
 
 import java.sql.Date;
@@ -17,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -34,6 +36,10 @@ public class UserDbStorage implements UserStorage {
             "LEFT JOIN friends f ON u.id = f.user_id " +
             "LEFT JOIN users u1 ON u1.id = f.friend_id " +
             " WHERE u.id IN (%s)";
+    //    private static final String FIND_FRIEND_BY_ID = "SELECT f.id, f.user_id, f.friend_id " +
+//            "FROM friends f " +
+//            "LEFT JOIN users u ON f.user_id = u.id " +
+//            "WHERE u.id = ?";
     private static final String FIND_ALL_QUERY = "SELECT * FROM users";
     private static final String INSERT_QUERY = "INSERT INTO users(email, login, name, birthday)" +
             "VALUES (?, ?, ?, ?)";
@@ -42,13 +48,14 @@ public class UserDbStorage implements UserStorage {
     private static final String UPDATE_QUERY = "UPDATE users SET email = ?, login = ?, " +
             "name = ?, birthday = ? WHERE id = ?";
     private static final String DELETE_ALL = "DELETE FROM users";
-    private static final String UPDATE_FRIEND_STATUS_QUERY = "UPDATE friend SET status = ? " +
+    private static final String UPDATE_FRIEND_STATUS_QUERY = "UPDATE friends SET status = ? " +
             "WHERE user_id = ? AND friend_id = ?";
     private static final String CHECK_FRIENDSHIP_EXISTS_QUERY =
             "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ?";
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
+    private final FriendDbStorage friendDbStorage;
 
     @Override
     public Collection<User> getUsers() {
@@ -73,7 +80,17 @@ public class UserDbStorage implements UserStorage {
             throw new NotFoundException("Пользователь с id = " + id + " не найден.");
         }
 
-        return users.getFirst();
+        List<Friend> friends = friendDbStorage.getListFriends(id);
+        User user = users.getFirst();
+
+        Set<Friend> friendsSet = new HashSet<>();
+        for (Friend friend : friends) {
+            friendsSet.add(friend);
+        }
+
+        user.setFriends(friendsSet);
+
+        return user;
     }
 
     @Override
@@ -139,16 +156,19 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(Long id, Long friendId, FriendStatus friendStatus) {
+    public Friend addFriend(Long id, Long friendId, FriendStatus friendStatus) {
         jdbcTemplate.update(INSERT_FRIENDS, id, friendId, friendStatus.name());
-        User user = getUserById(id);
-        if (user != null) {
-            user.getFriends().add(getUserById(friendId));
-        }
+
+        Friend friend = new Friend();
+        friend.setId(friendId);
+        friend.setStatus(friendStatus);
+
+        return friend;
     }
 
     public Friend getFriend(Long friendId, Long id) {
-
+        //добавила в FriendDb
+        return null;
     }
 
     @Override

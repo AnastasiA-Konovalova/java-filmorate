@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.dto.FriendDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -37,12 +38,12 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<UserDto> getListCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+    public List<FriendDto> getListCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.getListCommonFriends(id, otherId);
     }
 
     @GetMapping("/{id}/friends")
-    public List<UserDto> getListFriends(@PathVariable Long id) {
+    public List<FriendDto> getListFriends(@PathVariable Long id) {
         return userService.getListFriends(id);
     }
 

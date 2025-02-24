@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.extern.slf4j.Slf4j;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -89,8 +90,13 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(Long id, Long friendId, FriendStatus friendStatus) {
+    public Friend addFriend(Long id, Long friendId, FriendStatus friendStatus) {
+        return null;
+    }
 
+    @Override
+    public Friend getFriend(Long friendId, Long id) {
+        return null;
     }
 
     @Override

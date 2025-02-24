@@ -15,5 +15,5 @@ public class UserDto {
     private String name;
     private LocalDate birthday;
     private FriendStatus friendStatus;
-    private Set<UserDto> friends = new HashSet<>();
+    private Set<FriendDto> friends = new HashSet<>();
 }

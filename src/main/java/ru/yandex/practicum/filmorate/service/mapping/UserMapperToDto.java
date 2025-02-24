@@ -17,13 +17,7 @@ public class UserMapperToDto {
         userDto.setEmail(user.getEmail());
         userDto.setBirthday(user.getBirthday());
         userDto.setFriends(
-                user.getFriends().stream()
-                        .map(f -> {
-                            UserDto friend = new UserDto();
-                            friend.setId(f.getId());
-                            return friend;
-                        })
-                        .collect(Collectors.toSet())
+                user.getFriends().stream().map(FriendMapperToDto::toDto).collect(Collectors.toSet())
         );
         return userDto;
     }

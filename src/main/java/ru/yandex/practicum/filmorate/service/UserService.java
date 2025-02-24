@@ -3,12 +3,14 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FriendDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.mapping.FriendMapperToDto;
 import ru.yandex.practicum.filmorate.service.mapping.UserMapperToDto;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -32,18 +34,16 @@ public class UserService {
         }
 
         User user = getUser(id);
-        Friend friend = getFriend(friendId, id);
-        if (friend == null) {
-            throw new NotFoundException("Пользователь с ID " + friendId + " не найден");
-        }
+        getUser(friendId);
 
         boolean friendshipExists = userStorage.isFriendshipExists(friendId, id);
+        Friend friend;
 
         if (friendshipExists) {
             userStorage.updateFriendStatus(friendId, id, FriendStatus.CONFIRMED);
-            userStorage.addFriend(id, friendId, FriendStatus.CONFIRMED);
+            friend = userStorage.addFriend(id, friendId, FriendStatus.CONFIRMED);
         } else {
-            userStorage.addFriend(id, friendId, FriendStatus.UNCONFIRMED);
+            friend = userStorage.addFriend(id, friendId, FriendStatus.UNCONFIRMED);
         }
 
         user.addFriend(friend);
@@ -53,7 +53,7 @@ public class UserService {
 
     public UserDto deleteFriend(Long id, Long friendId) {
         User user = getUser(id);
-        //User friend = getUser(friendId);
+        getUser(friendId);
 
         Friend friend = getFriend(friendId, id);
 
@@ -63,15 +63,15 @@ public class UserService {
         return userMapperToDto.toDto(user);
     }
 
-    public List<UserDto> getListCommonFriends(Long firstId, Long secondId) {
+    public List<FriendDto> getListCommonFriends(Long firstId, Long secondId) {
         User userFirst = userStorage.getUserById(firstId);
         User userSecond = userStorage.getUserById(secondId);
 
-        Set<User> commonFriends = new HashSet<>(userFirst.getFriends());
+        Set<Friend> commonFriends = new HashSet<>(userFirst.getFriends());
         commonFriends.retainAll(userSecond.getFriends());
 
         return commonFriends.stream()
-                .map(userMapperToDto::toDto)
+                .map(FriendMapperToDto::toDto)
                 .toList();
     }
 
@@ -84,14 +84,14 @@ public class UserService {
         return userStorage.getFriend(friendId, id);
     }
 
-    public List<UserDto> getListFriends(Long id) {
+    public List<FriendDto> getListFriends(Long id) {
         User user = userStorage.getUserById(id);
 
         log.info("user " + user);
         log.info("Запрошен список друзей пользователя " + user.getFriends());
 
         return user.getFriends().stream()
-                .map(userMapperToDto::toDto)
+                .map(FriendMapperToDto::toDto)
                 .toList();
     }
 

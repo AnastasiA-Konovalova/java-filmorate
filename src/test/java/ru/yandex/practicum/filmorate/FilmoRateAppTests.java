@@ -14,9 +14,11 @@ import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.Friend.FriendDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
+import ru.yandex.practicum.filmorate.storage.mapper.FriendRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
@@ -25,7 +27,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Import({UserDbStorage.class, UserRowMapper.class, FilmDbStorage.class, FilmRowMapper.class,
-        GenreDbStorage.class, GenreRowMapper.class, MpaDbStorage.class, MpaRowMapper.class})
+        GenreDbStorage.class, GenreRowMapper.class, MpaDbStorage.class, MpaRowMapper.class,
+        FriendDbStorage.class, FriendRowMapper.class})
 class FilmoRateAppTests {
 
     private final UserDbStorage userDbStorage;
@@ -56,6 +58,7 @@ class FilmoRateAppTests {
     private final MpaDbStorage mpaDbStorage;
     private static Mpa mpa1;
     private static Mpa mpa2;
+    private final FriendDbStorage friendDbStorage;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -224,6 +227,40 @@ class FilmoRateAppTests {
     }
 
     @Test
+    void getUserWithFriendTest() {
+        User userNew1 = userDbStorage.createUser(user1);
+        User userNew2 = userDbStorage.createUser(user2);
+        User userNew3 = userDbStorage.createUser(user3);
+
+        userDbStorage.addFriend(userNew1.getId(), userNew2.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(userNew1.getId(), userNew3.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(userNew3.getId(), userNew1.getId(), FriendStatus.CONFIRMED);
+
+        userNew1 = userDbStorage.getUserById(userNew1.getId());
+        userNew3 = userDbStorage.getUserById(userNew3.getId());
+
+        assertEquals(2, userNew1.getFriends().size());
+        assertEquals(1, userNew3.getFriends().size());
+    }
+
+    @Test
+    void getFriend() {
+        User userNew1 = userDbStorage.createUser(user1);
+        User userNew2 = userDbStorage.createUser(user2);
+        User userNew3 = userDbStorage.createUser(user3);
+
+        userDbStorage.addFriend(userNew1.getId(), userNew2.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(userNew1.getId(), userNew3.getId(), FriendStatus.UNCONFIRMED);
+        userDbStorage.addFriend(userNew3.getId(), userNew1.getId(), FriendStatus.CONFIRMED);
+
+        assertNotNull(friendDbStorage.getFriend(userNew1.getId(), userNew3.getId()));
+        assertNotNull(friendDbStorage.getFriend(userNew1.getId(), userNew2.getId()));
+        assertNotNull(friendDbStorage.getFriend(userNew3.getId(), userNew1.getId()));
+
+        assertNull(friendDbStorage.getFriend(userNew3.getId(), userNew2.getId())); //друга нет
+    }
+
+    @Test
     void updateFriendStatusTest() {
         User newUser1 = userDbStorage.createUser(user1);
         User newUser2 = userDbStorage.createUser(user2);
@@ -231,8 +268,8 @@ class FilmoRateAppTests {
         userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
         userDbStorage.updateFriendStatus(newUser1.getId(), newUser2.getId(), FriendStatus.CONFIRMED);
 
-        List<User> friends = List.copyOf(userDbStorage.getUserById(newUser1.getId()).getFriends());
-        friends.get(0)
+//        List<User> friends = List.copyOf(userDbStorage.getUserById(newUser1.getId()).getFriends());
+//        friends.get(0)
     }
 
     @Test

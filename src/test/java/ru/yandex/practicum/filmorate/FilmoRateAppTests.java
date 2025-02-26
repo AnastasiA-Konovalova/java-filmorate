@@ -145,8 +145,11 @@ class FilmoRateAppTests {
     void testFindUserById() {
         userDbStorage.createUser(user1);
 
-        Optional.ofNullable(userDbStorage.getUserById(user1.getId()));
-        User user = userDbStorage.getUserById(user1.getId());
+        Optional<User> userOpt = userDbStorage.getUserById(user1.getId());
+
+        assertTrue(userOpt.isPresent(), "Пользователь не найден");
+
+        User user = userOpt.get();
 
         assertNotNull(user);
         assertEquals("UserName1", user.getName());
@@ -185,8 +188,12 @@ class FilmoRateAppTests {
     @Test
     void testUserSave() {
         userDbStorage.createUser(user1);
-        User user = userDbStorage.getUserById(user1.getId());
 
+        Optional<User> userOpt = userDbStorage.getUserById(user1.getId());
+
+        assertTrue(userOpt.isPresent(), "Пользователь не найден");
+
+        User user = userOpt.get();
         assertEquals(user.getName(), user1.getName());
     }
 
@@ -197,12 +204,14 @@ class FilmoRateAppTests {
         user2.setId(user1.getId());
 
         userDbStorage.updateUser(user2);
-        User userUpdated = userDbStorage.getUserById(user1.getId());
+        Optional<User> user = userDbStorage.getUserById(user1.getId());
+        assertTrue(user.isPresent(), "Пользователь не найден");
 
-        assertEquals(userUpdated.getName(), user2.getName());
-        assertEquals(userUpdated.getLogin(), user2.getLogin());
-        assertEquals(userUpdated.getEmail(), user2.getEmail());
-        assertEquals(userUpdated.getBirthday(), user2.getBirthday());
+        User userUp = user.get();
+        assertEquals(userUp.getName(), user2.getName());
+        assertEquals(userUp.getLogin(), user2.getLogin());
+        assertEquals(userUp.getEmail(), user2.getEmail());
+        assertEquals(userUp.getBirthday(), user2.getBirthday());
     }
 
     @Test
@@ -232,13 +241,24 @@ class FilmoRateAppTests {
         User userNew2 = userDbStorage.createUser(user2);
         User userNew3 = userDbStorage.createUser(user3);
 
+        // Добавление друзей
         userDbStorage.addFriend(userNew1.getId(), userNew2.getId(), FriendStatus.UNCONFIRMED);
         userDbStorage.addFriend(userNew1.getId(), userNew3.getId(), FriendStatus.UNCONFIRMED);
         userDbStorage.addFriend(userNew3.getId(), userNew1.getId(), FriendStatus.CONFIRMED);
 
-        userNew1 = userDbStorage.getUserById(userNew1.getId());
-        userNew3 = userDbStorage.getUserById(userNew3.getId());
+        // Получаем пользователей через Optional
+        Optional<User> userOptional1 = userDbStorage.getUserById(userNew1.getId());
+        Optional<User> userOptional3 = userDbStorage.getUserById(userNew3.getId());
 
+        // Проверка, что пользователи существуют
+        assertTrue(userOptional1.isPresent(), "Пользователь 1 не найден");
+        assertTrue(userOptional3.isPresent(), "Пользователь 3 не найден");
+
+        // Извлекаем пользователей
+        userNew1 = userOptional1.get();
+        userNew3 = userOptional3.get();
+
+        // Проверка количества друзей
         assertEquals(2, userNew1.getFriends().size());
         assertEquals(1, userNew3.getFriends().size());
     }
@@ -257,7 +277,8 @@ class FilmoRateAppTests {
         assertNotNull(friendDbStorage.getFriend(userNew1.getId(), userNew2.getId()));
         assertNotNull(friendDbStorage.getFriend(userNew3.getId(), userNew1.getId()));
 
-        assertNull(friendDbStorage.getFriend(userNew3.getId(), userNew2.getId())); //друга нет
+        assertTrue(friendDbStorage.getFriend(userNew3.getId(), userNew2.getId()).isEmpty());
+
     }
 
     @Test
@@ -273,44 +294,44 @@ class FilmoRateAppTests {
     }
 
     @Test
-    void isFriendshipExistsTest() {
-        User newUser1 = userDbStorage.createUser(user1);
-        User newUser2 = userDbStorage.createUser(user2);
-        User newUser3 = userDbStorage.createUser(user3);
-
-        userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
-        userDbStorage.addFriend(newUser1.getId(), newUser3.getId(), FriendStatus.UNCONFIRMED);
-        userDbStorage.addFriend(newUser3.getId(), newUser1.getId(), FriendStatus.CONFIRMED);
-
-        User updatedUser1 = userDbStorage.getUserById(newUser1.getId());
-        User updatedUser2 = userDbStorage.getUserById(newUser2.getId());
-        User updatedUser3 = userDbStorage.getUserById(newUser3.getId());
-    }
-
-    @Test
     void deleteFriend() {
         User newUser1 = userDbStorage.createUser(user1);
         User newUser2 = userDbStorage.createUser(user2);
         User newUser3 = userDbStorage.createUser(user3);
+
+        // Добавление друзей
         userDbStorage.addFriend(newUser1.getId(), newUser2.getId(), FriendStatus.UNCONFIRMED);
         userDbStorage.addFriend(newUser1.getId(), newUser3.getId(), FriendStatus.UNCONFIRMED);
         userDbStorage.addFriend(newUser3.getId(), newUser1.getId(), FriendStatus.CONFIRMED);
 
+        // Удаление друга
         userDbStorage.deleteFriend(newUser1.getId(), newUser3.getId());
 
-        User updatedUser1 = userDbStorage.getUserById(newUser1.getId());
-        User updatedUser2 = userDbStorage.getUserById(newUser2.getId());
-        User updatedUser3 = userDbStorage.getUserById(newUser3.getId());
+        // Получаем пользователей через Optional
+        Optional<User> updatedUser1Optional = userDbStorage.getUserById(newUser1.getId());
+        Optional<User> updatedUser2Optional = userDbStorage.getUserById(newUser2.getId());
+        Optional<User> updatedUser3Optional = userDbStorage.getUserById(newUser3.getId());
 
-        assertEquals(1, userDbStorage.getUserById(updatedUser1.getId()).getFriends().size());
-        assertEquals(0, updatedUser2.getFriends().size());
-        assertEquals(1, updatedUser3.getFriends().size());
+        // Проверка, что все пользователи найдены
+        assertTrue(updatedUser1Optional.isPresent(), "Пользователь 1 не найден");
+        assertTrue(updatedUser2Optional.isPresent(), "Пользователь 2 не найден");
+        assertTrue(updatedUser3Optional.isPresent(), "Пользователь 3 не найден");
+
+        // Извлекаем пользователей
+        User updatedUser1 = updatedUser1Optional.get();
+        User updatedUser2 = updatedUser2Optional.get();
+        User updatedUser3 = updatedUser3Optional.get();
+
+        // Проверка количества друзей
+        assertEquals(1, updatedUser1.getFriends().size());  // Пользователь 1 должен иметь 1 друга
+        assertEquals(0, updatedUser2.getFriends().size());  // Пользователь 2 не должен иметь друзей
+        assertEquals(1, updatedUser3.getFriends().size());  // Пользователь 3 должен иметь 1 друга
     }
 
     @Test
     void testFindFilmById() {
         filmDbStorage.createFilm(film1);
-        Optional<Film> filmOptional = Optional.ofNullable(filmDbStorage.getFilmById(film1.getId()));
+        Optional<Film> filmOptional = filmDbStorage.getFilmById(film1.getId());
 
         assertThat(filmOptional)
                 .isPresent()
@@ -337,10 +358,15 @@ class FilmoRateAppTests {
     @Test
     void testFilmSave() {
         Film filmCreate = filmDbStorage.createFilm(film3);
-        Film filmGet = filmDbStorage.getFilmById(film3.getId());
+        Optional<Film> filmGetOpt = filmDbStorage.getFilmById(film3.getId());
+
+        assertTrue(filmGetOpt.isPresent(), "Фильм не найден в базе");
+
+        Film filmGet = filmGetOpt.get();
 
         assertEquals(filmCreate.getName(), filmGet.getName());
     }
+
 
     @Test
     void testFilmUpdate() { //doesn't work
@@ -372,8 +398,12 @@ class FilmoRateAppTests {
 
         filmDbStorage.addLike(filmCreate.getId(), userCreate.getId());
 
-        Integer likesCount = filmDbStorage.getFilmById(filmCreate.getId()).getLikes().size();
-        assertEquals(1, likesCount);
+        Optional<Film> filmOptional = filmDbStorage.getFilmById(filmCreate.getId());
+        assertTrue(filmOptional.isPresent(), "Фильм не найден в базе");
+
+        Film film = filmOptional.get();
+        Integer likeCount = film.getLikes().size();
+        assertEquals(1, likeCount);
     }
 
     @Test
@@ -384,9 +414,9 @@ class FilmoRateAppTests {
         filmDbStorage.addLike(filmCreate.getId(), userCreateOne.getId());
         filmDbStorage.addLike(filmCreate.getId(), userCreateTwo.getId());
 
-        Integer likesCount = filmDbStorage.deleteLike(filmCreate.getId(), userCreateOne.getId());
+        Optional<Integer> likesCount = filmDbStorage.deleteLike(filmCreate.getId(), userCreateOne.getId());
 
-        assertEquals(1, likesCount);
+        assertEquals(1, likesCount.get());
     }
 
     @Test
@@ -402,22 +432,30 @@ class FilmoRateAppTests {
 
         List<Film> films = (List<Film>) filmDbStorage.getPopularFilms(3L);
 
-        assertEquals(films.get(0), filmDbStorage.getFilmById(filmCreateThree.getId()));
-        assertEquals(films.get(1), filmDbStorage.getFilmById(filmCreateOne.getId()));
-        assertEquals(films.get(2), filmDbStorage.getFilmById(filmCreateTwo.getId()));
+        assertEquals(films.get(0), filmDbStorage.getFilmById(filmCreateThree.getId()).get());
+        assertEquals(films.get(1), filmDbStorage.getFilmById(filmCreateOne.getId()).get());
+        assertEquals(films.get(2), filmDbStorage.getFilmById(filmCreateTwo.getId()).get());
 
     }
 
     @Test
     void testFindGenreById() {
         Film film = filmDbStorage.createFilm(film1);
-        Film filmFromDb = filmDbStorage.getFilmById(film.getId());
+
+        Optional<Film> filmOptional = filmDbStorage.getFilmById(film.getId());
+        assertTrue(filmOptional.isPresent(), "Фильм не найден в базе");
+
+        Film filmFromDb = filmOptional.get();
+
         List<Genre> genres = new ArrayList<>();
         genre1.setId(1L);
         genres.add(genre1);
         filmFromDb.setGenres(genres);
 
-        Genre genre = genreDbStorage.getGenreById(1L);
+        Optional<Genre> genreOpt = genreDbStorage.getGenreById(1L);
+        assertTrue(genreOpt.isPresent(), "Жанр не найден в базе");
+
+        Genre genre = genreOpt.get();
 
         assertEquals(filmFromDb.getGenres().get(0), genre);
     }
@@ -432,10 +470,10 @@ class FilmoRateAppTests {
     @Test
     void getGenreByIds() {
         List<Long> genres = new ArrayList<>();
-        Genre genre1 = genreDbStorage.getGenreById(1L);
-        Genre genre2 = genreDbStorage.getGenreById(2L);
-        genres.add(genre1.getId());
-        genres.add(genre2.getId());
+        Optional<Genre> genre1 = genreDbStorage.getGenreById(1L);
+        Optional<Genre> genre2 = genreDbStorage.getGenreById(2L);
+        genres.add(genre1.map(Genre::getId).get());
+        genres.add(genre2.map(Genre::getId).get());
 
         List<Genre> genreIds = genreDbStorage.getGenreByIds(genres);
 
@@ -445,12 +483,18 @@ class FilmoRateAppTests {
     @Test
     void testFindMpaById() {
         Film film = filmDbStorage.createFilm(film1);
-        Film filmFromDb = filmDbStorage.getFilmById(film.getId());
-        filmFromDb.setMpa(mpa1);
+        Optional<Film> filmFromDb = filmDbStorage.getFilmById(film.getId());
+        assertTrue(filmFromDb.isPresent(), "Фильм не найден в базе");
 
-        Mpa mpa = mpaDbStorage.getMpaById(mpa1.getId());
+        Film filmDb = filmFromDb.get();
+        filmDb.setMpa(mpa1);
 
-        assertEquals(mpa, filmFromDb.getMpa());
+        Optional<Mpa> mpaOpt = mpaDbStorage.getMpaById(mpa1.getId());
+        assertTrue(mpaOpt.isPresent(), "MPA не найдено в базе");
+
+        Mpa mpa = mpaOpt.get();
+
+        assertEquals(mpa, filmDb.getMpa());
     }
 
     @Test

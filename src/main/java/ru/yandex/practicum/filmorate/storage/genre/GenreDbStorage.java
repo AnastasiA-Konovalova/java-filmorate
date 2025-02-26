@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.genre;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -11,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Qualifier("genreDbStorage")
@@ -28,8 +30,13 @@ public class GenreDbStorage implements GenreStorage {
         return jdbcTemplate.query(FIND_ALL_GENRES, genreRowMapper);
     }
 
-    public Genre getGenreById(Long id) {
-        return jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, genreRowMapper, id);
+    public Optional<Genre> getGenreById(Long id) {
+        try {
+            Genre genre = jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, genreRowMapper, id);
+            return Optional.ofNullable(genre);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     public List<Genre> getGenreByIds(List<Long> ids) {

@@ -29,11 +29,11 @@ public class MpaService {
     }
 
     public MpaDto getMpaById(Long id) {
-        Mpa mpa = mpaDbStorage.getMpaById(id);
-        if (mpa == null) {
-            log.warn("Неправильно введен id рейтинга");
-            throw new NotFoundException("Рейтинг с таким id отсутствует");
-        }
-        return mpaMapperToDto.toDto(mpa);
+        return mpaDbStorage.getMpaById(id)
+                .map(MpaMapperToDto::toDto)
+                .orElseThrow(() -> {
+                    log.warn("Неправильно введен id рейтинга");
+                    return new NotFoundException("Рейтинг с таким id отсутствует");
+                });
     }
 }

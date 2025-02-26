@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -36,10 +38,6 @@ public class UserDbStorage implements UserStorage {
             "LEFT JOIN friends f ON u.id = f.user_id " +
             "LEFT JOIN users u1 ON u1.id = f.friend_id " +
             " WHERE u.id IN (%s)";
-    //    private static final String FIND_FRIEND_BY_ID = "SELECT f.id, f.user_id, f.friend_id " +
-//            "FROM friends f " +
-//            "LEFT JOIN users u ON f.user_id = u.id " +
-//            "WHERE u.id = ?";
     private static final String FIND_ALL_QUERY = "SELECT * FROM users";
     private static final String INSERT_QUERY = "INSERT INTO users(email, login, name, birthday)" +
             "VALUES (?, ?, ?, ?)";
@@ -73,7 +71,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public Optional<User> getUserById(Long id) {
         List<User> users = jdbcTemplate.query(FIND_BY_ID_QUERY, userRowMapper, id);
 
         if (users == null || users.isEmpty()) {
@@ -84,13 +82,11 @@ public class UserDbStorage implements UserStorage {
         User user = users.getFirst();
 
         Set<Friend> friendsSet = new HashSet<>();
-        for (Friend friend : friends) {
-            friendsSet.add(friend);
-        }
+        friendsSet.addAll(friends);
 
         user.setFriends(friendsSet);
 
-        return user;
+        return Optional.of(user);
     }
 
     @Override
@@ -133,7 +129,7 @@ public class UserDbStorage implements UserStorage {
         if (keyHolder.getKey() != null) {
             user.setId(keyHolder.getKey().longValue());
         } else {
-            throw new RuntimeException("Ошибка при сохранении фильма: не удалось получить ID");
+            throw new ValidationException("Ошибка при сохранении фильма: не удалось получить ID");
         }
         return user;
     }
@@ -164,11 +160,6 @@ public class UserDbStorage implements UserStorage {
         friend.setStatus(friendStatus);
 
         return friend;
-    }
-
-    public Friend getFriend(Long friendId, Long id) {
-        //добавила в FriendDb
-        return null;
     }
 
     @Override

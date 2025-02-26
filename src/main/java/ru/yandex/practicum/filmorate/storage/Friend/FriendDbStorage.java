@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.storage.mapper.FriendRowMapper;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Qualifier("friendDbStorage")
@@ -27,9 +28,9 @@ public class FriendDbStorage implements FriendStorage {
             WHERE user_id = ?
             """;
 
-    public Friend getFriend(Long userId, Long friendId) {
+    public Optional<Friend> getFriend(Long userId, Long friendId) {
         List<Friend> friends = jdbcTemplate.query(FIND_FRIEND_BY_ID, new FriendRowMapper(), userId, friendId);
-        return friends.isEmpty() ? null : friends.getFirst();
+        return friends.isEmpty() ? Optional.empty() : Optional.of(friends.getFirst());
     }
 
     public List<Friend> getListFriends(Long id) {

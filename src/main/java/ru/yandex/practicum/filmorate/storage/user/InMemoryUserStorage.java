@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -26,12 +27,12 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public Optional<User> getUserById(Long id) {
         if (!users.containsKey(id)) {
             log.warn("Ошибка. Пользователя с таким id нет");
             throw new NotFoundException("Пользователя с таким id нет");
         }
-        return users.get(id);
+        return Optional.ofNullable(users.get(id));
     }
 
     @Override
@@ -91,11 +92,6 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public Friend addFriend(Long id, Long friendId, FriendStatus friendStatus) {
-        return null;
-    }
-
-    @Override
-    public Friend getFriend(Long friendId, Long id) {
         return null;
     }
 

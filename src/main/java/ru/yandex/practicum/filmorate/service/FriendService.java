@@ -3,11 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Friend;
 import ru.yandex.practicum.filmorate.storage.Friend.FriendStorage;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -22,6 +24,8 @@ public class FriendService {
                     "пользователя " + id);
         }
 
-        return friendStorage.getFriend(id, friendId);
+        Optional<Friend> friend = friendStorage.getFriend(id, friendId);
+        return friend.orElseThrow(() ->
+                new NotFoundException("Друг с id " + friendId + " не найден для пользователя с id " + id));
     }
 }

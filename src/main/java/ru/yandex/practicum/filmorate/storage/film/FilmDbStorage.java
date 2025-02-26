@@ -3,10 +3,13 @@ package ru.yandex.practicum.filmorate.storage.film;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeptions.InternalServerException;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -15,6 +18,7 @@ import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
@@ -92,22 +96,31 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Integer addLike(Long filmId, Long userId) {
-        return jdbcTemplate.update(INSERT_LIKE, filmId, userId);
+    public Optional<Integer> addLike(Long filmId, Long userId) {
+        try {
+            int like = jdbcTemplate.update(INSERT_LIKE, filmId, userId);
+            return Optional.of(like);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
-    public Integer deleteLike(Long filmId, Long userId) {
-        Film film = getFilmById(filmId);
-        Optional.ofNullable(film)
-                .orElseThrow(() -> new NotFoundException(String.format("Фильм с id %d не найден.", filmId)));
+    public Optional<Integer> deleteLike(Long filmId, Long userId) {
+        Film film = getFilmById(filmId).orElseThrow((() -> new NotFoundException(String.format("Фильм с id %d не найден.", filmId))));
 
         if (!film.getLikes().contains(userId)) {
             throw new ValidationException("Пользователь с id " + userId + " не ставил лайк фильму с id "
                     + filmId + ". Т.е. удалить лайк не получится.");
         }
-        film.deleteLike(filmId);
-        return jdbcTemplate.update(DELETE_LIKE, filmId, userId);
+        int like = jdbcTemplate.update(DELETE_LIKE, filmId, userId);
+
+        if (like > 0) {
+            film.deleteLike(userId);
+            return Optional.of(like);
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -116,14 +129,9 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(Long id) {
+    public Optional<Film> getFilmById(Long id) {
         List<Film> films = jdbcTemplate.query(FIND_BY_ID_QUERY, new FilmRowMapper(), id);
-
-        if (films == null || films.isEmpty()) {
-            throw new NotFoundException("Фильм с id = " + id + " не найден.");
-        }
-
-        return films.getFirst();
+        return films.stream().findFirst();
     }
 
     @Override
@@ -146,15 +154,31 @@ public class FilmDbStorage implements FilmStorage {
         if (keyHolder.getKey() != null) {
             film.setId(keyHolder.getKey().longValue());
         } else {
-            throw new RuntimeException("Ошибка при сохранении фильма: не удалось получить ID");
+            throw new InternalServerException("Ошибка при сохранении фильма: не удалось получить ID");
+        }
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            batchUpdate(film.getId(), film.getGenres());
         }
 
-        if (film.getGenres() != null) {
-            for (Genre genre : film.getGenres()) {
-                jdbcTemplate.update(INSERT_INTO_FILM_GENRE, film.getId(), genre.getId());
-            }
-        }
         return film;
+    }
+
+    public void batchUpdate(Long filmId, final List<Genre> genres) {
+        jdbcTemplate.batchUpdate(
+                INSERT_INTO_FILM_GENRE,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, filmId);
+                        ps.setLong(2, genres.get(i).getId());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return genres.size();
+                    }
+                }
+        );
     }
 
     @Override
@@ -172,7 +196,7 @@ public class FilmDbStorage implements FilmStorage {
         if (updatedRows == 0) {
             throw new NotFoundException("Фильм с id=" + film.getId() + " не обновлён.");
         }
-        return getFilmById(film.getId());
+        return getFilmById(film.getId()).orElseThrow((() -> new NotFoundException(String.format("Фильм с id %d не найден."))));
     }
 
     @Override

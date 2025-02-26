@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class InMemoryFilmStorage implements FilmStorage {
@@ -26,22 +27,22 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Integer addLike(Long filmId, Long userId) {
-        return 0;
+    public Optional<Integer> addLike(Long filmId, Long userId) {
+        return Optional.empty();
     }
 
     @Override
-    public Integer deleteLike(Long filmId, Long userId) {
-        return 0;
+    public Optional<Integer> deleteLike(Long filmId, Long userId) {
+        return Optional.empty();
     }
 
     @Override
-    public Film getFilmById(Long id) {
+    public Optional<Film> getFilmById(Long id) {
         if (!films.containsKey(id)) {
             log.warn("Ошибка. Фильма с таким id нет в списке");
             throw new NotFoundException("Фильма с таким id нет в списке");
         }
-        return films.get(id);
+        return Optional.ofNullable(films.get(id));
     }
 
     @Override

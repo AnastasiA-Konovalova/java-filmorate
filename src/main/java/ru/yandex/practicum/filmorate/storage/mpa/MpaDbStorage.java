@@ -2,12 +2,14 @@ package ru.yandex.practicum.filmorate.storage.mpa;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
 
 import java.util.Collection;
+import java.util.Optional;
 
 @Repository
 @Qualifier("mpaDbStorage")
@@ -22,7 +24,12 @@ public class MpaDbStorage implements MpaStorage {
         return jdbcTemplate.query(FIND_ALL_MPA, mpaRowMapper);
     }
 
-    public Mpa getMpaById(Long id) {
-        return jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, mpaRowMapper, id);
+    public Optional<Mpa> getMpaById(Long id) {
+        try {
+            Mpa mpa = jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, mpaRowMapper, id);
+            return Optional.ofNullable(mpa);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 }

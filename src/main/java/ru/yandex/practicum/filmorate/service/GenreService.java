@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.GenreDto;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.service.mapping.GenreMapperToDto;
+import ru.yandex.practicum.filmorate.service.mapping.GenreMapper;
 import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 
 import java.util.Collection;
@@ -23,17 +23,17 @@ public class GenreService {
         List<Genre> genres = (List<Genre>) genreDbStorage.getGenres();
 
         return genres.stream()
-                .map(GenreMapperToDto::toDto)
+                .map(GenreMapper::toDto)
                 .toList();
     }
 
     public GenreDto getGenreById(Long id) {
-        Genre genre = genreDbStorage.getGenreById(id);
-        if (genre == null) {
-            log.warn("Неправильно введен id жанра");
-            throw new NotFoundException("Жанр с таким id отсутствует");
-        }
-        return GenreMapperToDto.toDto(genre);
+        return genreDbStorage.getGenreById(id)
+                .map(GenreMapper::toDto)
+                .orElseThrow(() -> {
+                    log.warn("Неправильно введен id жанра");
+                    return new NotFoundException("Жанр с id = " + id + " отсутствует");
+                });
     }
 
     public List<GenreDto> getGenreByIds(List<Long> ids) {
@@ -43,7 +43,7 @@ public class GenreService {
             throw new NotFoundException("Жанры с такими ids отсутствуют");
         }
         return genreList.stream()
-                .map(GenreMapperToDto::toDto)
+                .map(GenreMapper::toDto)
                 .toList();
     }
 }

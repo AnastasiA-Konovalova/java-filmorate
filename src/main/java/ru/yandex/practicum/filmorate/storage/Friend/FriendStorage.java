@@ -3,10 +3,11 @@ package ru.yandex.practicum.filmorate.storage.Friend;
 import ru.yandex.practicum.filmorate.model.Friend;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FriendStorage {
 
-    Friend getFriend(Long id, Long friendId);
+    Optional<Friend> getFriend(Long id, Long friendId);
 
     List<Friend> getListFriends(Long id);
 }

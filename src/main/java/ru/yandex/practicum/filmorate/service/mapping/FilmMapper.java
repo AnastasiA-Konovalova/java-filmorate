@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.dto.MpaDto;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
-public class FilmMapperToDto {
+public class FilmMapper {
 
     public static FilmDto toDto(Film film) {
         FilmDto filmDto = new FilmDto();
@@ -26,7 +26,7 @@ public class FilmMapperToDto {
 
         if (film.getGenres() != null) {
             filmDto.setGenres(film.getGenres().stream()
-                    .map(GenreMapperToDto::toDto).toList()
+                    .map(GenreMapper::toDto).toList()
             );
         }
 
@@ -34,5 +34,31 @@ public class FilmMapperToDto {
             filmDto.setLikes(film.getLikes());
         }
         return filmDto;
+    }
+
+    public static Film toEntity(Film film, FilmDto filmDto) {
+        film.setId(filmDto.getId());
+        film.setName(filmDto.getName());
+        film.setDescription(filmDto.getDescription());
+        film.setReleaseDate(filmDto.getReleaseDate());
+        film.setDuration(filmDto.getDuration());
+
+        MpaDto mpaDto = filmDto.getMpa();
+        Mpa mpa = new Mpa();
+        if (mpaDto != null) {
+            mpa.setId(mpaDto.getId());
+            mpa.setName(mpaDto.getName());
+        }
+
+        film.setMpa(mpa);
+
+        if (filmDto.getGenres() != null) {
+            film.setGenres(filmDto.getGenres().stream()
+                    .map(GenreMapper::toEntity)
+                    .toList());
+
+        }
+
+        return film;
     }
 }

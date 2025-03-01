@@ -1,17 +1,17 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
-@Repository
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
@@ -22,16 +22,31 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(Long id) {
+    public Collection<Film> getPopularFilms(Long count) {
+        return List.of();
+    }
+
+    @Override
+    public Optional<Integer> addLike(Long filmId, Long userId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Integer> deleteLike(Long filmId, Long userId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Film> getFilmById(Long id) {
         if (!films.containsKey(id)) {
             log.warn("Ошибка. Фильма с таким id нет в списке");
             throw new NotFoundException("Фильма с таким id нет в списке");
         }
-        return films.get(id);
+        return Optional.ofNullable(films.get(id));
     }
 
     @Override
-    public Film addFilm(Film film) {
+    public Film createFilm(Film film) {
         films.values().stream()
                 .filter(filmCheck -> filmCheck.getName().equalsIgnoreCase(film.getName()))
                 .findFirst()

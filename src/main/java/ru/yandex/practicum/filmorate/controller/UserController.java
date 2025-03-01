@@ -11,9 +11,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.dto.FriendDto;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,51 +25,50 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserStorage userStorage;
     private final UserService userService;
 
     @GetMapping
-    public Collection<User> getUsers() {
-        return userStorage.getUsers();
+    public Collection<UserDto> getUsers() {
+        return userService.getListUsers();
     }
 
     @GetMapping("/films/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userStorage.getUserById(id);
+    public UserDto getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getListCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+    public List<FriendDto> getListCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.getListCommonFriends(id, otherId);
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getListFriends(@PathVariable Long id) {
+    public List<FriendDto> getListFriends(@PathVariable Long id) {
         return userService.getListFriends(id);
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
-        return userStorage.createUser(user);
+    public UserDto createUser(@Valid @RequestBody User user) {
+        return userService.createUser(user);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User newUser) {
-        return userStorage.updateUser(newUser);
+    public UserDto updateUser(@Valid @RequestBody User newUser) {
+        return userService.updateUser(newUser);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriend(@PathVariable Long id, @PathVariable Long friendId) {
+    public UserDto addFriend(@PathVariable Long id, @PathVariable Long friendId) {
         return userService.addFriend(id, friendId);
     }
 
     @DeleteMapping
     public void deleteUsers() {
-        userStorage.deleteUsers();
+        userService.deleteUsers();
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public User deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
+    public UserDto deleteFriend(@PathVariable Long id, @PathVariable Long friendId) {
         return userService.deleteFriend(id, friendId);
     }
 }

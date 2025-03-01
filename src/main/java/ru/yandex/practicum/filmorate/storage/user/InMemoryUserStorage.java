@@ -1,9 +1,10 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exeptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Friend;
+import ru.yandex.practicum.filmorate.model.FriendStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.ArrayList;
@@ -11,10 +12,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
-@Repository
 public class InMemoryUserStorage implements UserStorage {
 
     private final Map<Long, User> users = new HashMap<>();
@@ -26,12 +27,12 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public Optional<User> getUserById(Long id) {
         if (!users.containsKey(id)) {
             log.warn("Ошибка. Пользователя с таким id нет");
             throw new NotFoundException("Пользователя с таким id нет");
         }
-        return users.get(id);
+        return Optional.ofNullable(users.get(id));
     }
 
     @Override
@@ -87,6 +88,26 @@ public class InMemoryUserStorage implements UserStorage {
     public void deleteUsers() {
         log.info("Все пользователи удалены");
         users.clear();
+    }
+
+    @Override
+    public Friend addFriend(Long id, Long friendId, FriendStatus friendStatus) {
+        return null;
+    }
+
+    @Override
+    public void deleteFriend(Long id, Long friendId) {
+
+    }
+
+    @Override
+    public void updateFriendStatus(Long id, Long friendId, FriendStatus newStatus) {
+
+    }
+
+    @Override
+    public boolean isFriendshipExists(Long id, Long friendId) {
+        return false;
     }
 
     private long generateId() {
